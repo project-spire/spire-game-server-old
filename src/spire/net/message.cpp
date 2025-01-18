@@ -22,12 +22,18 @@ MessageHeader MessageHeader::deserialize(const std::span<const std::byte, SIZE> 
     return MessageHeader {.body_size = body_size};
 }
 
-InMessage::InMessage(const Entity entity, std::vector<std::byte>&& data)
-    : _entity {entity}, _data {std::move(data)} {}
+InMessage::InMessage(std::shared_ptr<Client> client, std::vector<std::byte>&& data)
+    : _client {std::move(client)}, _data {std::move(data)} {}
+
+InMessage::InMessage(InMessage&& other) noexcept
+    : _client {std::move(other._client)}, _data {std::move(other._data)} {}
 
 OutMessage::OutMessage(const MessageHeader header) {
     _data.resize(sizeof(MessageHeader) + header.body_size);
 
     MessageHeader::serialize(header, std::span<std::byte, MessageHeader::SIZE> {_data.data(), MessageHeader::SIZE});
 }
+
+OutMessage::OutMessage(OutMessage&& other) noexcept
+    : _data {std::move(other._data)} {}
 }

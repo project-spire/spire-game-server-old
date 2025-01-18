@@ -6,6 +6,8 @@
 #include <vector>
 
 namespace spire::net {
+class Client;
+
 struct MessageHeader {
     const u16 body_size;
 
@@ -16,19 +18,28 @@ struct MessageHeader {
 };
 
 struct InMessage {
-    InMessage(Entity entity, std::vector<std::byte>&& data);
+    InMessage(std::shared_ptr<Client> client, std::vector<std::byte>&& data);
+    ~InMessage() = default;
+    InMessage(InMessage&& other) noexcept;
+    InMessage(const InMessage&) = delete;
+    InMessage& operator=(const InMessage&) = delete;
 
-    Entity entity() const { return _entity; }
-    std::span<const std::byte> data() { return std::span {_data.data(), _data.size()}; }
+    Client* client() const { return _client.get(); }
+    std::span<const std::byte> data() const { return std::span {_data.data(), _data.size()}; }
 
 private:
-    const Entity _entity;
+    std::shared_ptr<Client> _client;
     std::vector<std::byte> _data;
 };
 
 struct OutMessage {
     explicit OutMessage(MessageHeader header);
+    ~OutMessage() = default;
+    OutMessage(OutMessage&& other) noexcept;
+    OutMessage(const OutMessage&) = delete;
+    OutMessage& operator=(const OutMessage&) = delete;
 
+    std::span<const std::byte> data() const { return std::span {_data.data(), _data.size()}; }
     std::span<std::byte> data() { return std::span {_data.data(), _data.size()}; }
 
 private:

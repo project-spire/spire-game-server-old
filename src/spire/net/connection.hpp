@@ -21,6 +21,8 @@ public:
 
     void open(boost::asio::any_io_executor& executor);
     void close(CloseCode code);
+
+    void send(std::unique_ptr<OutMessage> message);
     void send(std::shared_ptr<OutMessage> message);
 
 private:
