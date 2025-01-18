@@ -1,1 +1,1 @@
-# spire-main
+# Spire Game Server

@@ -52,10 +52,20 @@ FetchContent_MakeAvailable(tf)
 option(TF_BUILD_TESTS "Enables builds of tests" OFF)
 option(TF_BUILD_EXAMPLES "Enables builds of examples" OFF)
 
+FetchContent_Declare(
+    EnTT
+    GIT_REPOSITORY https://github.com/skypjack/entt.git
+    GIT_TAG v3.14.0
+)
+FetchContent_MakeAvailable(EnTT)
+
 # Linking
 target_link_libraries(spire-lib
-    PRIVATE
+    PUBLIC
     Boost::system
+    EnTT::EnTT
+
+    PRIVATE
     protobuf::libprotobuf
     tf::default_settings
 )
@@ -88,7 +98,7 @@ function(protobuf_compiler infile include outdir)
     )
 
     add_custom_target(${name}-proto ALL DEPENDS ${outfile})
-    add_dependencies(tower-lib ${name}-proto)
+    add_dependencies(spire-lib ${name}-proto)
 endfunction()
 
 foreach(message ${messages})

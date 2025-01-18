@@ -15,19 +15,22 @@ public:
 
     Connection(
         boost::asio::strand<boost::asio::any_io_executor>&& strand,
-        boost::asio::ip::tcp::socket&& socket);
+        boost::asio::ip::tcp::socket&& socket,
+        std::function<void(CloseCode)>&& on_closed,
+        std::function<void(std::vector<std::byte>&&)>&& on_received);
 
-    bool open();
+    void open(boost::asio::any_io_executor& executor);
     void close(CloseCode code);
     void send(std::shared_ptr<OutMessage> message);
-
-    bool is_open() const;
-    bool is_connected() const;
 
 private:
     boost::asio::awaitable<void> receive();
 
     boost::asio::strand<boost::asio::any_io_executor> _strand;
     boost::asio::ip::tcp::socket _socket;
+    std::atomic<bool> _is_open {false};
+
+    std::function<void(CloseCode)> _on_closed;
+    std::function<void(std::vector<std::byte>&&)> _on_received;
 };
 }

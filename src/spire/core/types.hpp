@@ -1,5 +1,7 @@
 #pragma once
 
+#include <entt/entity/entity.hpp>
+
 #include <cstddef>
 #include <cstdint>
 
@@ -16,4 +18,6 @@ using u64 = uint64_t;
 
 using f32 = float;
 using f64 = double;
+
+using Entity = entt::entity;
 }

@@ -1,4 +1,5 @@
-#include <spire/core/numbers.hpp>
+#include <boost/asio.hpp>
+#include <spire/net/connection.hpp>
 
 #include <iostream>
 
