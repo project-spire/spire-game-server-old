@@ -2,11 +2,11 @@
 
 namespace spire::net {
 Client::Client(
-    boost::asio::strand<boost::asio::any_io_executor>&& strand,
+    boost::asio::any_io_executor& executor,
     boost::asio::ip::tcp::socket&& socket,
     std::function<void(std::unique_ptr<InMessage>)>&& on_message_received)
     : _connection {
-        std::move(strand),
+        make_strand(executor),
         std::move(socket),
         [this](const Connection::CloseCode code) {
             stop();
@@ -17,6 +17,14 @@ Client::Client(
             }
 
             _on_message_received(std::make_unique<InMessage>(shared_from_this(), std::move(data)));
+        }},
+    _heart_beater {
+        executor,
+        [this] {
+            //TODO: Send HeartBeat message
+        },
+        [this] {
+            stop();
         }},
     _on_message_received {std::move(on_message_received)} {}
 

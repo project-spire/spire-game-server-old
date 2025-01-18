@@ -1,13 +1,14 @@
 #pragma once
 
+#include <spire/core/heart_beater.hpp>
 #include <spire/net/connection.hpp>
 #include <spire/net/message.hpp>
 
 namespace spire::net {
-class Client final : public std::enable_shared_from_this<Client>, boost::noncopyable {
+class Client final : std::enable_shared_from_this<Client>, boost::noncopyable {
 public:
     Client(
-        boost::asio::strand<boost::asio::any_io_executor>&& strand,
+        boost::asio::any_io_executor& executor,
         boost::asio::ip::tcp::socket&& socket,
         std::function<void(std::unique_ptr<InMessage>)>&& on_message_received);
 
@@ -21,6 +22,7 @@ public:
 
 private:
     Connection _connection;
+    HeartBeater _heart_beater;
     std::function<void(std::unique_ptr<InMessage>)> _on_message_received;
 
     bool _is_authenticated {false};
