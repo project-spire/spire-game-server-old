@@ -16,6 +16,4 @@ using u64 = uint64_t;
 
 using f32 = float;
 using f64 = double;
-
-using byte = std::byte;
 }
