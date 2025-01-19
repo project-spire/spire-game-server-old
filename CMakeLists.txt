@@ -65,8 +65,6 @@ target_link_libraries(base_lib
     PUBLIC
     Boost::system
     EnTT::EnTT
-
-    PRIVATE
     protobuf::libprotobuf
     tf::default_settings
 )
@@ -75,35 +73,36 @@ target_link_libraries(base_lib
 # Protobuf compilations
 # ----------------------------------------------------------------
 set(SPIRE_LIB_MESSAGE_GEN_DIR ${CMAKE_CURRENT_BINARY_DIR}/gen/spire/msg)
+set(SPIRE_LIB_MESSAGE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/protocol/msg)
 file(MAKE_DIRECTORY ${SPIRE_LIB_MESSAGE_GEN_DIR})
 file(GLOB_RECURSE messages protocol/msg/*.proto)
 message("Protobuf messages: ${messages}")
 
-function(compile_protobuf_message in_file include_dir out_dir)
+function(compile_protobuf_message in_file)
+    get_filename_component(in_file_dir ${in_file} DIRECTORY)
+    string(REPLACE "${SPIRE_LIB_MESSAGE_INCLUDE_DIR}" "" relative_in_file_dir "${in_file_dir}")
+
     get_filename_component(name ${in_file} NAME_WE)
 
-    set(out_file
-        "${out_dir}/${name}pb.cc"
-        "${out_dir}/${name}pb.h"
-    )
+    set(out_src "${SPIRE_LIB_MESSAGE_GEN_DIR}/${relative_in_file_dir}/${name}.pb.cc")
+    set(out_hdr "${SPIRE_LIB_MESSAGE_GEN_DIR}/${relative_in_file_dir}/${name}.pb.h")
 
     add_custom_command(
-        OUTPUT ${out_file}
+        OUTPUT "${out_src}" "${out_hdr}"
         COMMAND protoc
         ARGS
-        --cpp_out=${out_dir}
-        -I${include_dir}
-        ${in_file}
+            --cpp_out=${SPIRE_LIB_MESSAGE_GEN_DIR}
+            -I${SPIRE_LIB_MESSAGE_INCLUDE_DIR}
+            ${in_file}
         DEPENDS ${in_file} protoc
-        COMMENT "[protoc] Compiling message: ${out_file}"
-        VERBATIM
+        COMMENT "[protoc] Compiling message: ${out_src} ${out_hdr}"
     )
 
-    add_custom_target(${name}_proto ALL DEPENDS ${out_file})
-    add_dependencies(base_lib ${name}_proto)
+    target_sources(base_lib PUBLIC ${out_src} ${out_hdr})
 endfunction()
 
 foreach(message ${messages})
-    compile_protobuf_message(${message} ${CMAKE_CURRENT_SOURCE_DIR}/protocol/msg ${SPIRE_LIB_MESSAGE_GEN_DIR})
+    compile_protobuf_message(${message})
 endforeach()
 
+target_include_directories(base_lib PUBLIC ${SPIRE_LIB_MESSAGE_GEN_DIR})

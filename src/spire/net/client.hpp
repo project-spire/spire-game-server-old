@@ -1,6 +1,6 @@
 #pragma once
 
-#include <spire/core/heart_beater.hpp>
+#include <spire/core/heartbeater.hpp>
 #include <spire/net/connection.hpp>
 #include <spire/net/message.hpp>
 
@@ -21,7 +21,7 @@ public:
     void authenticate();
 
 private:
-    HeartBeater _heart_beater;
+    Heartbeater _heartbeater;
     Connection _connection;
     std::function<void(std::unique_ptr<InMessage>)> _on_message_received;
     std::function<void(std::shared_ptr<Client>)> _on_stop;

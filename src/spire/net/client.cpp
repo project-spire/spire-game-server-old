@@ -1,14 +1,16 @@
 #include <spire/net/client.hpp>
+#include <spire/msg/base_message.pb.h>
 
 namespace spire::net {
 Client::Client(
     boost::asio::ip::tcp::socket&& socket,
     std::function<void(std::unique_ptr<InMessage>)>&& on_message_received,
     std::function<void(std::shared_ptr<Client>)>&& on_stop)
-    : _heart_beater {
+    : _heartbeater {
           socket.get_executor(),
           [this] {
               //TODO: Send HeartBeat message
+              msg::BaseMessage heartbeat;
           },
           [this] {
               stop();
@@ -20,7 +22,7 @@ Client::Client(
         },
         [this](std::vector<std::byte>&& data) {
             if (_is_authenticated) {
-                _heart_beater.pulse();
+                _heartbeater.pulse();
             }
 
             _on_message_received(std::make_unique<InMessage>(shared_from_this(), std::move(data)));

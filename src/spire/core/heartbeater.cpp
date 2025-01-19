@@ -1,7 +1,7 @@
-#include <spire/core/heart_beater.hpp>
+#include <spire/core/heartbeater.hpp>
 
 namespace spire {
-HeartBeater::HeartBeater(
+Heartbeater::Heartbeater(
     const boost::asio::any_io_executor& executor,
     std::function<void()>&& on_check,
     std::function<void()>&& on_dead)
@@ -22,16 +22,16 @@ HeartBeater::HeartBeater(
     });
 }
 
-void HeartBeater::start() {
+void Heartbeater::start() {
     pulse();
     _timer->start();
 }
 
-void HeartBeater::stop() {
+void Heartbeater::stop() {
     _timer->stop();
 }
 
-void HeartBeater::pulse() {
+void Heartbeater::pulse() {
     _last_beat = steady_clock::now();
     _dead_beats = 0;
 }

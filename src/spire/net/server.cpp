@@ -43,6 +43,15 @@ void Server::start() {
 
 void Server::stop() {
     if (!_is_running.exchange(false)) return;
+
+    {
+        boost::system::error_code ec;
+        _acceptor.close(ec);
+    }
+
+    for (auto& client : _clients) {
+        client->stop();
+    }
 }
 
 void Server::add_client_deferred(boost::asio::ip::tcp::socket&& socket) {

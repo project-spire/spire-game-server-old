@@ -5,12 +5,12 @@
 #include <spire/core/types.hpp>
 
 namespace spire {
-class HeartBeater final : boost::noncopyable {
+class Heartbeater final : boost::noncopyable {
     static constexpr uint32_t MAX_DEAD_BEATS = 3;
     static constexpr auto BEAT_INTERVAL = 5s;
 
 public:
-    HeartBeater(
+    Heartbeater(
         const boost::asio::any_io_executor& executor,
         std::function<void()>&& on_check,
         std::function<void()>&& on_dead);
