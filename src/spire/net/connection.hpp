@@ -14,12 +14,11 @@ public:
     };
 
     Connection(
-        boost::asio::strand<boost::asio::any_io_executor>&& strand,
         boost::asio::ip::tcp::socket&& socket,
         std::function<void(CloseCode)>&& on_closed,
         std::function<void(std::vector<std::byte>&&)>&& on_received);
 
-    void open(boost::asio::any_io_executor& executor);
+    void open();
     void close(CloseCode code);
 
     void send(std::unique_ptr<OutMessage> message);

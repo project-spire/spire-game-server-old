@@ -11,7 +11,7 @@ class HeartBeater final : boost::noncopyable {
 
 public:
     HeartBeater(
-        boost::asio::any_io_executor& executor,
+        const boost::asio::any_io_executor& executor,
         std::function<void()>&& on_check,
         std::function<void()>&& on_dead);
 

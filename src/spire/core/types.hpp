@@ -5,6 +5,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <string_view>
 
 namespace spire {
@@ -23,6 +24,7 @@ using f64 = double;
 
 using Entity = entt::entity;
 
+using namespace std::chrono;
 using namespace std::chrono_literals;
 using namespace std::string_view_literals;
 }

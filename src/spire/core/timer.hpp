@@ -11,7 +11,7 @@ using namespace std::chrono;
 class Timer final : std::enable_shared_from_this<Timer> {
 public:
     Timer(
-        boost::asio::any_io_executor& executor, milliseconds duration,
+        const boost::asio::any_io_executor& executor, milliseconds duration,
         bool auto_start = false, bool one_shot = false);
     ~Timer();
 
@@ -26,7 +26,7 @@ private:
     boost::asio::steady_timer _timer;
     boost::signals2::signal<void()> _on_timeout {};
 
-    boost::asio::any_io_executor& _executor;
+    const boost::asio::any_io_executor& _executor;
     std::atomic<bool> _is_running {false};
 };
 }

@@ -20,7 +20,6 @@ struct MessageHeader {
 struct InMessage {
     InMessage(std::shared_ptr<Client> client, std::vector<std::byte>&& data);
     ~InMessage() = default;
-    InMessage(InMessage&& other) noexcept;
     InMessage(const InMessage&) = delete;
     InMessage& operator=(const InMessage&) = delete;
 
@@ -35,7 +34,6 @@ private:
 struct OutMessage {
     explicit OutMessage(MessageHeader header);
     ~OutMessage() = default;
-    OutMessage(OutMessage&& other) noexcept;
     OutMessage(const OutMessage&) = delete;
     OutMessage& operator=(const OutMessage&) = delete;
 

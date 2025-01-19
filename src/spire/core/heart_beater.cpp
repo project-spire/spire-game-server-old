@@ -2,7 +2,7 @@
 
 namespace spire {
 HeartBeater::HeartBeater(
-    boost::asio::any_io_executor& executor,
+    const boost::asio::any_io_executor& executor,
     std::function<void()>&& on_check,
     std::function<void()>&& on_dead)
     : _timer {std::make_shared<Timer>(executor, BEAT_INTERVAL)},

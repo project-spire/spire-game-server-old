@@ -1,16 +1,17 @@
 #include <spire/net/connection.hpp>
 
 namespace spire::net {
-Connection::Connection(boost::asio::strand<boost::asio::any_io_executor>&& strand,
-    boost::asio::ip::tcp::socket&& socket, std::function<void(CloseCode)>&& on_closed,
+Connection::Connection(
+    boost::asio::ip::tcp::socket&& socket,
+    std::function<void(CloseCode)>&& on_closed,
     std::function<void(std::vector<std::byte>&&)>&& on_received)
-    : _strand {std::move(strand)}, _socket {std::move(socket)},
+    : _strand {make_strand(socket.get_executor())}, _socket {std::move(socket)},
     _on_closed {std::move(on_closed)}, _on_received {std::move(on_received)} {}
 
-void Connection::open(boost::asio::any_io_executor& executor) {
+void Connection::open() {
     if (_is_open.exchange(true)) return;
 
-    co_spawn(executor, [this]()->boost::asio::awaitable<void> {
+    co_spawn(_socket.get_executor(), [this]()->boost::asio::awaitable<void> {
         while (_is_open) {
             co_await receive();
         }

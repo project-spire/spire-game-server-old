@@ -1,7 +1,7 @@
 #include <spire/core/timer.hpp>
 
 namespace spire {
-Timer::Timer(boost::asio::any_io_executor& executor, const milliseconds duration,
+Timer::Timer(const boost::asio::any_io_executor& executor, const milliseconds duration,
     const bool auto_start, const bool one_shot)
     : _duration {duration}, _one_shot {one_shot}, _timer {executor}, _executor {executor} {
     if (auto_start) start();

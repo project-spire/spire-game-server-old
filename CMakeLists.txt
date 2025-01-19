@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.28)
 
 project(
-    spire-game-server
+    spire_game_server
     DESCRIPTION "A game server of Project Spire"
     VERSION 25.1.18
     LANGUAGES CXX
@@ -12,18 +12,19 @@ option(SPIRE_BUILD_TESTS "Enable builds of tests" ON)
 
 # Source
 # ----------------------------------------------------------------
-add_library(spire-lib STATIC)
-target_compile_features(spire-lib PUBLIC cxx_std_23)
-target_compile_options(spire-lib PRIVATE -Wall -Wextra -Wpedantic)
-target_include_directories(spire-lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/src)
+add_library(base_lib STATIC)
+add_library(spire::base_lib ALIAS base_lib)
+
+target_compile_features(base_lib PUBLIC cxx_std_23)
+target_compile_options(base_lib PUBLIC -Wall -Wextra -Wpedantic)
+target_include_directories(base_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/gen)
 add_subdirectory(src/spire/core)
 add_subdirectory(src/spire/net)
 
-add_executable(spire-game-server
+add_executable(game_server
     src/spire/main.cpp
 )
-target_compile_options(spire-game-server PRIVATE -Wall -Wextra -Wpedantic)
-target_link_libraries(spire-game-server PRIVATE spire-lib)
+target_link_libraries(game_server PRIVATE spire::base_lib)
 
 
 # External Dependencies
@@ -60,7 +61,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(EnTT)
 
 # Linking
-target_link_libraries(spire-lib
+target_link_libraries(base_lib
     PUBLIC
     Boost::system
     EnTT::EnTT
@@ -73,35 +74,36 @@ target_link_libraries(spire-lib
 
 # Protobuf compilations
 # ----------------------------------------------------------------
-set(message_outdir ${CMAKE_CURRENT_BINARY_DIR}/src/spire/message)
-file(MAKE_DIRECTORY ${message_outdir})
-file(GLOB_RECURSE messages messages/*.proto)
+set(SPIRE_LIB_MESSAGE_GEN_DIR ${CMAKE_CURRENT_BINARY_DIR}/gen/spire/msg)
+file(MAKE_DIRECTORY ${SPIRE_LIB_MESSAGE_GEN_DIR})
+file(GLOB_RECURSE messages protocol/msg/*.proto)
+message("Protobuf messages: ${messages}")
 
-function(protobuf_compiler infile include outdir)
-    get_filename_component(name ${infile} NAME_WE)
+function(compile_protobuf_message in_file include_dir out_dir)
+    get_filename_component(name ${in_file} NAME_WE)
 
-    set(outfile
-        "${outdir}/${name}pb.cc"
-        "${outdir}/${name}pb.h"
+    set(out_file
+        "${out_dir}/${name}pb.cc"
+        "${out_dir}/${name}pb.h"
     )
 
     add_custom_command(
-        OUTPUT ${outfile}
+        OUTPUT ${out_file}
         COMMAND protoc
         ARGS
-        --cpp_out=${outdir}
-        -I${include}
-        ${infile}
-        DEPENDS ${infile} protoc
+        --cpp_out=${out_dir}
+        -I${include_dir}
+        ${in_file}
+        DEPENDS ${in_file} protoc
         COMMENT "[protoc] Compiling message: ${out_file}"
         VERBATIM
     )
 
-    add_custom_target(${name}-proto ALL DEPENDS ${outfile})
-    add_dependencies(spire-lib ${name}-proto)
+    add_custom_target(${name}_proto ALL DEPENDS ${out_file})
+    add_dependencies(base_lib ${name}_proto)
 endfunction()
 
 foreach(message ${messages})
-    protobuf_compiler(${message} ${CMAKE_CURRENT_SOURCE_DIR}/messages ${message_outdir})
+    compile_protobuf_message(${message} ${CMAKE_CURRENT_SOURCE_DIR}/protocol/msg ${SPIRE_LIB_MESSAGE_GEN_DIR})
 endforeach()
 
