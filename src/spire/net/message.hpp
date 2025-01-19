@@ -1,6 +1,7 @@
 #pragma once
 
 #include <spire/core/types.hpp>
+#include <spire/msg/base_message.pb.h>
 
 #include <span>
 #include <vector>
@@ -33,12 +34,14 @@ private:
 
 struct OutMessage {
     explicit OutMessage(MessageHeader header);
+    explicit OutMessage(const msg::BaseMessage* body);
     ~OutMessage() = default;
     OutMessage(const OutMessage&) = delete;
     OutMessage& operator=(const OutMessage&) = delete;
 
+    void serialize(const msg::BaseMessage* body);
+
     std::span<const std::byte> data() const { return std::span {_data.data(), _data.size()}; }
-    std::span<std::byte> data() { return std::span {_data.data(), _data.size()}; }
 
 private:
     std::vector<std::byte> _data {};

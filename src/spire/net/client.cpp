@@ -9,8 +9,11 @@ Client::Client(
     : _heartbeater {
           socket.get_executor(),
           [this] {
-              //TODO: Send HeartBeat message
-              msg::BaseMessage heartbeat;
+              msg::Heartbeat heartbeat;
+              msg::BaseMessage base;
+              base.set_allocated_heartbeat(&heartbeat);
+
+              send(std::make_unique<OutMessage>(&base));
           },
           [this] {
               stop();
