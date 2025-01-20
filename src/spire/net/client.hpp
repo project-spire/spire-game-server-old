@@ -1,7 +1,7 @@
 #pragma once
 
-#include <spire/core/heartbeater.hpp>
 #include <spire/net/connection.hpp>
+#include <spire/net/heartbeater.hpp>
 #include <spire/net/message.hpp>
 
 namespace spire::net {

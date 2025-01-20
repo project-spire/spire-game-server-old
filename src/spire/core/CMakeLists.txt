@@ -1,6 +1,4 @@
 target_sources(base_lib PUBLIC
-    heartbeater.cpp
-    heartbeater.hpp
     random.hpp
     setting.cpp
     setting.hpp

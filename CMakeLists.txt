@@ -18,8 +18,10 @@ add_library(spire::base_lib ALIAS base_lib)
 target_compile_features(base_lib PUBLIC cxx_std_23)
 target_compile_options(base_lib PUBLIC -Wall -Wextra -Wpedantic)
 target_include_directories(base_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/gen)
+add_subdirectory(src/spire/component)
 add_subdirectory(src/spire/core)
 add_subdirectory(src/spire/net)
+add_subdirectory(src/spire/system)
 
 add_executable(game_server
     src/spire/main.cpp
@@ -60,6 +62,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(EnTT)
 
+FetchContent_Declare(
+    glm
+    GIT_REPOSITORY https://github.com/g-truc/glm.git
+    GIT_TAG 1.0.1
+)
+FetchContent_MakeAvailable(glm)
+
 # Linking
 target_link_libraries(base_lib
     PUBLIC
@@ -67,6 +76,7 @@ target_link_libraries(base_lib
     EnTT::EnTT
     protobuf::libprotobuf
     tf::default_settings
+    glm
 )
 
 

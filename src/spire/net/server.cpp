@@ -73,6 +73,8 @@ void Server::add_client_deferred(boost::asio::ip::tcp::socket&& socket) {
 void Server::remove_client_deferred(std::shared_ptr<Client> client) {
     client->stop();
 
+    //TODO: Remove client from room
+
     post(_strand, [this, client = std::move(client)] {
         _clients.erase(client);
     });

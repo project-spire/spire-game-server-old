@@ -22,8 +22,6 @@ using u64 = uint64_t;
 using f32 = float;
 using f64 = double;
 
-using Entity = entt::entity;
-
 using namespace std::chrono;
 using namespace std::chrono_literals;
 using namespace std::string_view_literals;

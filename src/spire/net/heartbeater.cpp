@@ -1,6 +1,6 @@
-#include <spire/core/heartbeater.hpp>
+#include <spire/net/heartbeater.hpp>
 
-namespace spire {
+namespace spire::net {
 Heartbeater::Heartbeater(
     const boost::asio::any_io_executor& executor,
     std::function<void()>&& on_check,

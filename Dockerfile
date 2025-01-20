@@ -23,4 +23,4 @@ WORKDIR /app
 COPY . .
 
 RUN cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSPIRE_BUILD_TESTS=OFF && \
-    cmake --build build --config Release --target game-server
+    cmake --build build --config Release --target game_server

@@ -3,8 +3,12 @@ target_sources(base_lib PUBLIC
     client.hpp
     connection.cpp
     connection.hpp
+    heartbeater.cpp
+    heartbeater.hpp
     message.cpp
     message.hpp
+    room.cpp
+    room.hpp
     server.cpp
     server.hpp
 )

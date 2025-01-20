@@ -1,8 +1,7 @@
 #pragma once
 
 #include <spire/net/client.hpp>
-
-#include <unordered_set>
+#include <spire/net/room.hpp>
 
 namespace spire::net {
 class Server final : boost::noncopyable {
@@ -23,5 +22,6 @@ private:
     boost::asio::ip::tcp::acceptor _acceptor;
 
     std::unordered_set<std::shared_ptr<Client>> _clients {};
+    std::unordered_map<u32, std::unique_ptr<Room>> _rooms {};
 };
 }

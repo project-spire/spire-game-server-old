@@ -4,7 +4,7 @@
 #include <spire/core/timer.hpp>
 #include <spire/core/types.hpp>
 
-namespace spire {
+namespace spire::net {
 class Heartbeater final : boost::noncopyable {
     static constexpr uint32_t MAX_DEAD_BEATS = 3;
     static constexpr auto BEAT_INTERVAL = 5s;
