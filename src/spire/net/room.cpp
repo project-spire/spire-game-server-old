@@ -8,8 +8,8 @@ Room::Room(const u32 id, boost::asio::strand<boost::asio::any_io_executor>&& str
 void Room::start() {
     if (_is_running.exchange(true)) return;
 
-    post(_strand, [this] {
-        update(high_resolution_clock::now());
+    post(_strand, [self = shared_from_this()] {
+        self->update(high_resolution_clock::now());
     });
 }
 
@@ -18,18 +18,32 @@ void Room::stop() {
 }
 
 void Room::add_client_deferred(std::shared_ptr<Client> client) {
-    post(_strand, [this, client = std::move(client)] mutable {
-        _clients.insert(std::move(client));
+    post(_strand, [self = shared_from_this(), client = std::move(client)] mutable {
+        self->_clients.insert(std::move(client));
     });
 }
 
 void Room::remove_client_deferred(std::shared_ptr<Client> client) {
-    post(_strand, [this, client = std::move(client)] {
-        _clients.erase(client);
+    post(_strand, [self = shared_from_this(), client = std::move(client)] {
+        self->_clients.erase(client);
     });
 }
 
-void Room::update(time_point<system_clock> last_update_time) {
+void Room::handle_message_deferred(std::unique_ptr<InMessage> message) {
+    dispatch(_strand, [self = shared_from_this(), message = std::move(message)] mutable {
+        //TODO;
+    });
+}
+
+void Room::broadcast_message_deferred(std::shared_ptr<OutMessage> message) {
+    dispatch(_strand, [self = shared_from_this(), message = std::move(message)] {
+        for (const auto& client : self->_clients) {
+            client->send(message);
+        }
+    });
+}
+
+void Room::update(const time_point<system_clock> last_update_time) {
     if (!_is_running) return;
 
     const auto now {high_resolution_clock::now()};
@@ -37,8 +51,8 @@ void Room::update(time_point<system_clock> last_update_time) {
 
     physics::PhysicsSystem::update(_registry, dt);
 
-    post(_strand, [this, now] {
-        update(now);
+    post(_strand, [self = shared_from_this(), now] {
+        self->update(now);
     });
 }
 }

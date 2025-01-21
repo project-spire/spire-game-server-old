@@ -22,6 +22,7 @@ private:
     boost::asio::ip::tcp::acceptor _acceptor;
 
     std::unordered_set<std::shared_ptr<Client>> _clients {};
-    std::unordered_map<u32, std::unique_ptr<Room>> _rooms {};
+    std::unordered_map<u32, std::shared_ptr<Room>> _rooms {};
+    std::shared_ptr<Room> _waiting_room {};
 };
 }

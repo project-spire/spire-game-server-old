@@ -6,7 +6,7 @@
 #include <unordered_set>
 
 namespace spire::net {
-class Room final : boost::noncopyable {
+class Room final : std::enable_shared_from_this<Room>, boost::noncopyable {
 public:
     Room(u32 id, boost::asio::strand<boost::asio::any_io_executor>&& strand);
 
@@ -15,6 +15,9 @@ public:
 
     void add_client_deferred(std::shared_ptr<Client> client);
     void remove_client_deferred(std::shared_ptr<Client> client);
+
+    void handle_message_deferred(std::unique_ptr<InMessage> message);
+    void broadcast_message_deferred(std::shared_ptr<OutMessage> message);
 
     u32 id() const { return _id; }
 

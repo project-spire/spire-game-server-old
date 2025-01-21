@@ -57,9 +57,6 @@ void Server::stop() {
 void Server::add_client_deferred(boost::asio::ip::tcp::socket&& socket) {
     auto new_client = std::make_shared<Client>(
         std::move(socket),
-        [this](std::unique_ptr<InMessage> message) {
-            //TODO: Handle message
-        },
         [this](std::shared_ptr<Client> client) mutable {
             remove_client_deferred(std::move(client));
         });
