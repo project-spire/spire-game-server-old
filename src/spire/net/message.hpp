@@ -24,8 +24,11 @@ struct InMessage {
     InMessage(const InMessage&) = delete;
     InMessage& operator=(const InMessage&) = delete;
 
-    Client* client() const { return _client.get(); }
-    std::span<const std::byte> data() const { return std::span {_data.data(), _data.size()}; }
+    Client& client() const { return *_client; }
+    std::span<const std::byte> span() const { return std::span {_data.data(), _data.size()}; }
+    const std::byte* data() const { return _data.data(); }
+    std::byte* data() { return _data.data(); }
+    size_t size() const { return _data.size(); }
 
 private:
     std::shared_ptr<Client> _client;
@@ -41,7 +44,8 @@ struct OutMessage {
 
     void serialize(const msg::BaseMessage* body);
 
-    std::span<const std::byte> data() const { return std::span {_data.data(), _data.size()}; }
+    std::span<const std::byte> span() const { return std::span {_data.data(), _data.size()}; }
+    bool empty() const { return _data.empty(); }
 
 private:
     std::vector<std::byte> _data {};

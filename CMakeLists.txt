@@ -45,6 +45,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(protobuf)
 option(protobuf_INSTALL "Install protobuf binaries and files" OFF)
 option(protobuf_BUILD_TESTS "Build tests" OFF)
+set(protobuf_VERBOSE OFF)
 
 FetchContent_Declare(
     tf

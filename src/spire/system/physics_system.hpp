@@ -13,7 +13,7 @@ public:
 
 inline void PhysicsSystem::update(entt::registry& registry, const f32 dt) {
     registry.view<Transform, Velocity>().each([dt](auto& transform, auto& velocity) {
-        transform.postion += velocity * dt;
+        transform.position += dt * velocity.v;
     });
 }
 }

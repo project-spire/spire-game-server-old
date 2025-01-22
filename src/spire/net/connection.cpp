@@ -29,25 +29,25 @@ void Connection::close(const CloseCode code) {
 }
 
 void Connection::send(std::unique_ptr<OutMessage> message) {
-    if (!message || message->data().empty()) return;
+    if (!message || message->empty()) return;
 
     dispatch(_strand, [this, message = std::move(message)] -> boost::asio::awaitable<void> {
         if (!_is_open) co_return;
 
         const auto [ec, _] = co_await _socket.async_send(
-            message->data(), boost::asio::as_tuple(boost::asio::use_awaitable));
+            message->span(), boost::asio::as_tuple(boost::asio::use_awaitable));
         if (ec) close(CloseCode::SendError);
     });
 }
 
 void Connection::send(std::shared_ptr<OutMessage> message) {
-    if (!message || message->data().empty()) return;
+    if (!message || message->empty()) return;
 
     dispatch(_strand, [this, message = std::move(message)] -> boost::asio::awaitable<void> {
         if (!_is_open) co_return;
 
         const auto [ec, _] = co_await _socket.async_send(
-            message->data(), boost::asio::as_tuple(boost::asio::use_awaitable));
+            message->span(), boost::asio::as_tuple(boost::asio::use_awaitable));
         if (ec) close(CloseCode::SendError);
     });
 }

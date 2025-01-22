@@ -2,8 +2,11 @@
 #include <spire/system/physics_system.hpp>
 
 namespace spire::net {
-Room::Room(const u32 id, boost::asio::strand<boost::asio::any_io_executor>&& strand)
-    : _id {id}, _strand {std::move(strand)} {}
+Room::Room(
+    const u32 id,
+    boost::asio::strand<boost::asio::any_io_executor>&& strand,
+    MessageHandler&& message_handler)
+    : _id {id}, _strand {std::move(strand)}, _message_handler {std::move(message_handler)} {}
 
 void Room::start() {
     if (_is_running.exchange(true)) return;
@@ -31,7 +34,7 @@ void Room::remove_client_deferred(std::shared_ptr<Client> client) {
 
 void Room::handle_message_deferred(std::unique_ptr<InMessage> message) {
     dispatch(_strand, [self = shared_from_this(), message = std::move(message)] mutable {
-        //TODO;
+        self->_message_handler.handle_message(std::move(message));
     });
 }
 
@@ -47,7 +50,7 @@ void Room::update(const time_point<system_clock> last_update_time) {
     if (!_is_running) return;
 
     const auto now {high_resolution_clock::now()};
-    const f32 dt {duration_cast<duration<f32, milliseconds>>(now - last_update_time).count()};
+    const f32 dt {duration<f32, std::milli> {now - last_update_time}.count()};
 
     physics::PhysicsSystem::update(_registry, dt);
 

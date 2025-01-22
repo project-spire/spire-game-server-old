@@ -5,7 +5,8 @@
 namespace spire::net {
 Client::Client(
     boost::asio::ip::tcp::socket&& socket,
-    std::function<void(std::shared_ptr<Client>)>&& on_stop)
+    std::function<void(std::shared_ptr<Client>)>&& on_stop,
+    const std::shared_ptr<Room>& current_room)
     : _strand {make_strand(socket.get_executor())},
     _heartbeater {
           socket.get_executor(),
@@ -17,27 +18,25 @@ Client::Client(
               self->send(std::make_unique<OutMessage>(&base));
           },
           [self = shared_from_this()] {
-              self->stop();
+              self->stop(StopCode::DeadHeartbeat);
           }},
     _connection {
         std::move(socket),
-        [self = shared_from_this()](const Connection::CloseCode) {
-            self->stop();
+        [self = shared_from_this()](const Connection::CloseCode code) {
+            self->stop(code == Connection::CloseCode::Normal ? StopCode::Normal : StopCode::ConnectionError);
         },
         [self = shared_from_this()](std::vector<std::byte>&& data) {
-            if (_is_authenticated) {
-                _heartbeater.pulse();
+            if (self->_is_authenticated) {
+                self->_heartbeater.pulse();
             }
 
-            auto message {std::make_unique<InMessage>(self->shared_from_this(), std::move(data))};
-
-            dispatch(self->_strand, [message = std::move(message)] mutable {
-                const auto current_room {message->client()->_current_room.lock()};
-                if (!current_room) return;
-                current_room->handle_message_deferred(std::move(message));
-            });
+            const auto current_room {self->_current_room.load().lock()};
+            if (!current_room) return;
+            current_room->handle_message_deferred(
+                std::make_unique<InMessage>(self->shared_from_this(), std::move(data)));
         }},
-    _on_stop {std::move(on_stop)} {}
+    _on_stop {std::move(on_stop)},
+    _current_room {current_room} {}
 
 void Client::start() {
     if (_is_running.exchange(true)) return;
@@ -45,8 +44,12 @@ void Client::start() {
     _connection.open();
 }
 
-void Client::stop() {
+void Client::stop(const StopCode code) {
     if (!_is_running.exchange(false)) return;
+
+    if (code != StopCode::Normal) {
+        //TODO: Log
+    }
 
     leave_room_deferred();
 
@@ -69,7 +72,7 @@ void Client::authenticate() {
 
 void Client::enter_room_deferred(std::shared_ptr<Room> room) {
     post(_strand, [self = shared_from_this(), room = std::move(room)] mutable {
-        if (const auto previous_room {self->_current_room.lock()}) {
+        if (const auto previous_room {self->_current_room.load().lock()}) {
             previous_room->remove_client_deferred(self);
         }
 
@@ -80,11 +83,11 @@ void Client::enter_room_deferred(std::shared_ptr<Room> room) {
 
 void Client::leave_room_deferred() {
     post(_strand, [self = shared_from_this()] mutable {
-        const auto previous_room {self->_current_room.lock()};
+        const auto previous_room {self->_current_room.load().lock()};
         if (!previous_room) return;
 
+        self->_current_room.load().reset();
         previous_room->remove_client_deferred(std::move(self));
-        self->_current_room.reset();
     });
 }
 }

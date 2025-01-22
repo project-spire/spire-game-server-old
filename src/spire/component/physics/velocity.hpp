@@ -4,6 +4,6 @@
 
 namespace spire::physics {
 struct Velocity {
-    glm::vec3 d;
+    glm::vec3 v;
 };
 }

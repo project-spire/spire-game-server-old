@@ -9,12 +9,20 @@ class Room;
 
 class Client final : std::enable_shared_from_this<Client>, boost::noncopyable {
 public:
+    enum class StopCode {
+        Normal,
+        InvalidInMessage,
+        ConnectionError,
+        DeadHeartbeat,
+    };
+
     Client(
         boost::asio::ip::tcp::socket&& socket,
-        std::function<void(std::shared_ptr<Client>)>&& on_stop);
+        std::function<void(std::shared_ptr<Client>)>&& on_stop,
+        const std::shared_ptr<Room>& current_room);
 
     void start();
-    void stop();
+    void stop(StopCode code);
 
     void send(std::unique_ptr<OutMessage> message);
     void send(std::shared_ptr<OutMessage> message);
@@ -34,6 +42,6 @@ private:
     std::atomic<bool> _is_running {false};
     bool _is_authenticated {false};
 
-    std::weak_ptr<Room> _current_room {};
+    std::atomic<std::weak_ptr<Room>> _current_room;
 };
 }

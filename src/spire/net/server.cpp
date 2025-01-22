@@ -1,5 +1,6 @@
 #include <spire/core/setting.hpp>
 #include <spire/net/server.hpp>
+#include <spire/net/handler/waiting_room_message_handler.hpp>
 
 namespace spire::net {
 Server::Server(boost::asio::any_io_executor&& executor)
@@ -7,7 +8,8 @@ Server::Server(boost::asio::any_io_executor&& executor)
     _strand {make_strand(_executor)},
     _acceptor {
         make_strand(_executor),
-        boost::asio::ip::tcp::endpoint {boost::asio::ip::tcp::v4(), Setting::listen_port()}} {
+        boost::asio::ip::tcp::endpoint {boost::asio::ip::tcp::v4(), Setting::listen_port()}},
+    _waiting_room {std::make_shared<Room>(0, make_strand(_executor), WaitingRoomMessageHandler::make())} {
     _acceptor.set_option(boost::asio::socket_base::reuse_address(true));
     _acceptor.listen(Setting::listen_backlog());
 }
@@ -50,7 +52,7 @@ void Server::stop() {
     }
 
     for (auto& client : _clients) {
-        client->stop();
+        client->stop(Client::StopCode::Normal);
     }
 }
 
@@ -59,7 +61,8 @@ void Server::add_client_deferred(boost::asio::ip::tcp::socket&& socket) {
         std::move(socket),
         [this](std::shared_ptr<Client> client) mutable {
             remove_client_deferred(std::move(client));
-        });
+        },
+        _waiting_room);
 
     post(_strand, [this, new_client = std::move(new_client)] mutable {
         _clients.insert(new_client);
@@ -68,9 +71,7 @@ void Server::add_client_deferred(boost::asio::ip::tcp::socket&& socket) {
 }
 
 void Server::remove_client_deferred(std::shared_ptr<Client> client) {
-    client->stop();
-
-    //TODO: Remove client from room
+    client->stop(Client::StopCode::Normal);
 
     post(_strand, [this, client = std::move(client)] {
         _clients.erase(client);
