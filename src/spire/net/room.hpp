@@ -2,7 +2,7 @@
 
 #include <entt/entt.hpp>
 #include <spire/net/client.hpp>
-#include <spire/net/handler/message_handler.hpp>
+#include <spire/net/message_handler.hpp>
 
 #include <unordered_set>
 
@@ -26,7 +26,7 @@ public:
     u32 id() const { return _id; }
 
 private:
-    void update(time_point<system_clock> last_update_time);
+    void update(time_point<steady_clock> last_update_time);
 
     const u32 _id;
     std::atomic<bool> _is_running {false};

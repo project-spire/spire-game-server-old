@@ -12,7 +12,7 @@ void Room::start() {
     if (_is_running.exchange(true)) return;
 
     post(_strand, [self = shared_from_this()] {
-        self->update(high_resolution_clock::now());
+        self->update(steady_clock::now());
     });
 }
 
@@ -21,13 +21,13 @@ void Room::stop() {
 }
 
 void Room::add_client_deferred(std::shared_ptr<Client> client) {
-    post(_strand, [self = shared_from_this(), client = std::move(client)] mutable {
+    dispatch(_strand, [self = shared_from_this(), client = std::move(client)] mutable {
         self->_clients.insert(std::move(client));
     });
 }
 
 void Room::remove_client_deferred(std::shared_ptr<Client> client) {
-    post(_strand, [self = shared_from_this(), client = std::move(client)] {
+    dispatch(_strand, [self = shared_from_this(), client = std::move(client)] {
         self->_clients.erase(client);
     });
 }
@@ -46,10 +46,10 @@ void Room::broadcast_message_deferred(std::shared_ptr<OutMessage> message) {
     });
 }
 
-void Room::update(const time_point<system_clock> last_update_time) {
+void Room::update(const time_point<steady_clock> last_update_time) {
     if (!_is_running) return;
 
-    const auto now {high_resolution_clock::now()};
+    const auto now {steady_clock::now()};
     const f32 dt {duration<f32, std::milli> {now - last_update_time}.count()};
 
     physics::PhysicsSystem::update(_registry, dt);

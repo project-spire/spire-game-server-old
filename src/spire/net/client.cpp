@@ -30,10 +30,10 @@ Client::Client(
                 self->_heartbeater.pulse();
             }
 
-            const auto current_room {self->_current_room.load().lock()};
-            if (!current_room) return;
-            current_room->handle_message_deferred(
-                std::make_unique<InMessage>(self->shared_from_this(), std::move(data)));
+            if (const auto room {self->_current_room.load().lock()}; room) {
+                room->handle_message_deferred(
+                    std::make_unique<InMessage>(self->shared_from_this(), std::move(data)));
+            }
         }},
     _on_stop {std::move(on_stop)},
     _current_room {current_room} {}
@@ -71,7 +71,7 @@ void Client::authenticate() {
 }
 
 void Client::enter_room_deferred(std::shared_ptr<Room> room) {
-    post(_strand, [self = shared_from_this(), room = std::move(room)] mutable {
+    dispatch(_strand, [self = shared_from_this(), room = std::move(room)] mutable {
         if (const auto previous_room {self->_current_room.load().lock()}) {
             previous_room->remove_client_deferred(self);
         }
@@ -82,7 +82,7 @@ void Client::enter_room_deferred(std::shared_ptr<Room> room) {
 }
 
 void Client::leave_room_deferred() {
-    post(_strand, [self = shared_from_this()] mutable {
+    dispatch(_strand, [self = shared_from_this()] mutable {
         const auto previous_room {self->_current_room.load().lock()};
         if (!previous_room) return;
 

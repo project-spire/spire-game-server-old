@@ -32,6 +32,8 @@ public:
     void enter_room_deferred(std::shared_ptr<Room> room);
     void leave_room_deferred();
 
+    milliseconds ping() const { return _ping.load(); }
+
 private:
     boost::asio::strand<boost::asio::any_io_executor> _strand;
     Heartbeater _heartbeater;
@@ -43,5 +45,7 @@ private:
     bool _is_authenticated {false};
 
     std::atomic<std::weak_ptr<Room>> _current_room;
+
+    std::atomic<milliseconds> _ping {};
 };
 }

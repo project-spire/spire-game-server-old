@@ -8,8 +8,6 @@ Heartbeater::Heartbeater(
     : _timer {std::make_shared<Timer>(executor, BEAT_INTERVAL)},
     _on_check {std::move(on_check)}, _on_dead {std::move(on_dead)} {
     _timeout_registration = _timer->register_timeout_handler([this] {
-        _on_check();
-
         if (_dead_beats >= MAX_DEAD_BEATS) {
             stop();
             _on_dead();
@@ -19,6 +17,8 @@ Heartbeater::Heartbeater(
         if (steady_clock::now() <= _last_beat + BEAT_INTERVAL) return;
 
         ++_dead_beats;
+
+        _on_check();
     });
 }
 

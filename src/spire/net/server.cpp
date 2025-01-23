@@ -1,4 +1,4 @@
-#include <spire/core/setting.hpp>
+#include <spire/core/settings.hpp>
 #include <spire/net/server.hpp>
 #include <spire/net/handler/waiting_room_message_handler.hpp>
 
@@ -8,10 +8,10 @@ Server::Server(boost::asio::any_io_executor&& executor)
     _strand {make_strand(_executor)},
     _acceptor {
         make_strand(_executor),
-        boost::asio::ip::tcp::endpoint {boost::asio::ip::tcp::v4(), Setting::listen_port()}},
+        boost::asio::ip::tcp::endpoint {boost::asio::ip::tcp::v4(), Settings::listen_port()}},
     _waiting_room {std::make_shared<Room>(0, make_strand(_executor), WaitingRoomMessageHandler::make())} {
     _acceptor.set_option(boost::asio::socket_base::reuse_address(true));
-    _acceptor.listen(Setting::listen_backlog());
+    _acceptor.listen(Settings::listen_backlog());
 }
 
 Server::~Server() {

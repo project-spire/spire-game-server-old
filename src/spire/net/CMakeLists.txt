@@ -7,12 +7,12 @@ target_sources(base_lib PUBLIC
     heartbeater.hpp
     message.cpp
     message.hpp
+    message_handler.hpp
     room.cpp
     room.hpp
     server.cpp
     server.hpp
 
-    handler/message_handler.hpp
     handler/waiting_room_message_handler.cpp
     handler/waiting_room_message_handler.hpp
 )
