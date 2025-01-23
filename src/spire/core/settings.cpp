@@ -1,4 +1,4 @@
-#include <spire/core/setting.hpp>
+#include <spire/core/settings.hpp>
 
 #include <cstdlib>
 #include <fstream>
@@ -18,7 +18,7 @@ std::string read_file_line(std::string_view path) {
 // TODO
 // yaml parse_yaml_file(std::string_view path) {}
 
-void Setting::init() {
+void Settings::init() {
     // _listen_port = std::stoi(std::getenv("SPIRE_GAME_LISTEN_PORT"));
     _listen_port = 30000;
     _listen_backlog = 4096;

@@ -3,9 +3,15 @@
 #include <entt/entt.hpp>
 #include <spire/component/physics/transform.hpp>
 #include <spire/component/physics/velocity.hpp>
-#include <spire/core/types.hpp>
+#include <spire/core/units.hpp>
+
 
 namespace spire::physics {
+struct PhysicsConfig {
+    Acceleration gravity {9.8};
+};
+
+
 class PhysicsSystem final {
 public:
     static void update(entt::registry& registry, f32 dt);

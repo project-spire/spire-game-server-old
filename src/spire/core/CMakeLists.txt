@@ -1,7 +1,7 @@
 target_sources(base_lib PUBLIC
     random.hpp
-    setting.cpp
-    setting.hpp
+    settings.cpp
+    settings.hpp
     timer.cpp
     timer.hpp
     types.hpp

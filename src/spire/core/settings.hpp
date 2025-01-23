@@ -3,7 +3,7 @@
 #include <spire/core/types.hpp>
 
 namespace spire {
-class Setting final {
+class Settings final {
 public:
     static void init();
 

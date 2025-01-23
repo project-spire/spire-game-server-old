@@ -1,4 +1,4 @@
-#include <spire/core/setting.hpp>
+#include <spire/core/settings.hpp>
 #include <spire/net/server.hpp>
 
 #include <iostream>
@@ -8,7 +8,7 @@ int main() {
     boost::asio::signal_set signals {workers.get_executor(), SIGINT, SIGTERM};
     spire::net::Server server {workers.get_executor()};
 
-    spire::Setting::init();
+    spire::Settings::init();
 
     signals.async_wait([&workers, &server](boost::system::error_code, int) {
         server.stop();
