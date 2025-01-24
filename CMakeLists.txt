@@ -48,11 +48,11 @@ option(protobuf_BUILD_TESTS "Build tests" OFF)
 set(protobuf_VERBOSE OFF)
 
 FetchContent_Declare(
-    tf
+    Taskflow
     GIT_REPOSITORY https://github.com/taskflow/taskflow.git
     GIT_TAG v3.9.0
 )
-FetchContent_MakeAvailable(tf)
+FetchContent_MakeAvailable(Taskflow)
 option(TF_BUILD_TESTS "Enables builds of tests" OFF)
 option(TF_BUILD_EXAMPLES "Enables builds of examples" OFF)
 
@@ -78,6 +78,7 @@ target_link_libraries(base_lib
     protobuf::libprotobuf
     tf::default_settings
     glm
+    Taskflow
 )
 
 

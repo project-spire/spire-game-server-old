@@ -8,132 +8,18 @@ namespace spire {
 using meter = f32;
 using imeter = i32;
 
-class Degree;
+using degree = f32;
+using radian = f32;
 
-class Radian {
-public:
-    explicit constexpr Radian(const f32 value)
-        : _value {value} {}
+static degree rad2deg(const radian x) {
+    static constexpr float ratio {180.0f / std::numbers::pi};
+    return x * ratio;
+}
 
-    explicit constexpr Radian(const Degree degree)
-        : _value {degree.to_radian().value()} {}
-
-    [[nodiscard]] constexpr f32 value() const { return _value; }
-
-    [[nodiscard]] Degree to_degree() const {
-        static constexpr f32 ratio {180.0f / std::numbers::pi};
-        return Degree {_value * ratio};
-    }
-
-    constexpr Radian& operator+=(const Radian& other) {
-        _value += other._value;
-        return *this;
-    }
-
-    constexpr Radian& operator-=(const Radian& other) {
-        _value -= other._value;
-        return *this;
-    }
-
-    constexpr Radian& operator*=(const Radian& other) {
-        _value *= other._value;
-        return *this;
-    }
-
-    constexpr Radian& operator/=(const Radian& other) {
-        _value /= other._value;
-        return *this;
-    }
-
-    constexpr Radian operator-() const {
-        return Radian {-_value};
-    }
-
-    constexpr Radian operator+(const Radian& other) const {
-        return Radian {_value + other._value};
-    }
-
-    constexpr Radian operator-(const Radian& other) const {
-        return Radian {_value - other._value};
-    }
-
-    constexpr Radian operator*(const Radian& other) const {
-        return Radian {_value * other._value};
-    }
-
-    constexpr Radian operator/(const Radian& other) const {
-        return Radian {_value / other._value};
-    }
-
-    constexpr bool operator==(const Radian& other) const = default;
-    constexpr auto operator<=>(const Radian& other) const = default;
-
-private:
-    f32 _value {};
-};
-
-
-class Degree {
-public:
-    explicit constexpr Degree(const f32 value)
-        : _value {value} {}
-
-    explicit constexpr Degree(const Radian radian)
-        : _value {radian.to_degree().value()} {}
-
-    [[nodiscard]] constexpr f32 value() const { return _value; }
-
-    [[nodiscard]] Radian to_radian() const {
-        static constexpr f32 ratio {std::numbers::pi / 180.0f};
-        return Radian {_value * ratio};
-    }
-
-    constexpr Degree& operator+=(const Degree& other) {
-        _value += other._value;
-        return *this;
-    }
-
-    constexpr Degree& operator-=(const Degree& other) {
-        _value -= other._value;
-        return *this;
-    }
-
-    constexpr Degree& operator*=(const Degree& other) {
-        _value *= other._value;
-        return *this;
-    }
-
-    constexpr Degree& operator/=(const Degree& other) {
-        _value /= other._value;
-        return *this;
-    }
-
-    constexpr Degree operator-() const {
-        return Degree {-_value};
-    }
-
-    constexpr Degree operator+(const Degree& other) const {
-        return Degree {_value + other._value};
-    }
-
-    constexpr Degree operator-(const Degree& other) const {
-        return Degree {_value - other._value};
-    }
-
-    constexpr Degree operator*(const Degree& other) const {
-        return Degree {_value * other._value};
-    }
-
-    constexpr Degree operator/(const Degree& other) const {
-        return Degree {_value / other._value};
-    }
-
-    constexpr bool operator==(const Radian& other) const = default;
-    constexpr auto operator<=>(const Radian& other) const = default;
-
-private:
-    f32 _value {};
-};
+static radian deg2rad(const degree x) {
+    static constexpr float ratio {std::numbers::pi / 180.0f};
+    return x * ratio;
+}
 
 
 class Speed {

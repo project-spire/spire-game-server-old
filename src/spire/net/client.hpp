@@ -32,20 +32,21 @@ public:
     void enter_room_deferred(std::shared_ptr<Room> room);
     void leave_room_deferred();
 
+    u64 id() const { return _character_id; }
     milliseconds ping() const { return _ping.load(); }
 
 private:
     boost::asio::strand<boost::asio::any_io_executor> _strand;
     Heartbeater _heartbeater;
     Connection _connection;
-
-    std::function<void(std::shared_ptr<Client>)> _on_stop;
+    std::atomic<milliseconds> _ping {};
 
     std::atomic<bool> _is_running {false};
     bool _is_authenticated {false};
+    std::function<void(std::shared_ptr<Client>)> _on_stop;
 
     std::atomic<std::weak_ptr<Room>> _current_room;
 
-    std::atomic<milliseconds> _ping {};
+    u64 _character_id {};
 };
 }

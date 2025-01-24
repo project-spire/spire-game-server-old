@@ -3,15 +3,15 @@
 #include <entt/entt.hpp>
 #include <spire/net/client.hpp>
 #include <spire/net/message_handler.hpp>
-
-#include <unordered_set>
+#include <taskflow/taskflow.hpp>
 
 namespace spire::net {
 class Room final : std::enable_shared_from_this<Room>, boost::noncopyable {
 public:
     Room(
         u32 id,
-        boost::asio::strand<boost::asio::any_io_executor>&& strand,
+        boost::asio::any_io_executor& io_executor,
+        tf::Executor& work_executor,
         MessageHandler&& message_handler);
 
     void start();
@@ -29,12 +29,16 @@ private:
     void update(time_point<steady_clock> last_update_time);
 
     const u32 _id;
-    std::atomic<bool> _is_running {false};
-    boost::asio::strand<boost::asio::any_io_executor> _strand;
 
+    std::atomic<bool> _is_running {false};
+    boost::asio::any_io_executor& _io_executor;
+    tf::Executor& _work_executor;
+
+    ConcurrentQueue<std::function<void()>> _tasks {};
+    ConcurrentQueue<std::unique_ptr<InMessage>> _messages {};
     MessageHandler _message_handler;
 
-    std::unordered_set<std::shared_ptr<Client>> _clients {};
+    std::unordered_map<u64, std::shared_ptr<Client>> _clients {};
     entt::registry _registry {};
 };
 }

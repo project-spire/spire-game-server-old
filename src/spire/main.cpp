@@ -1,8 +1,6 @@
 #include <spire/core/settings.hpp>
 #include <spire/net/server.hpp>
 
-#include <iostream>
-
 int main() {
     boost::asio::thread_pool workers {std::thread::hardware_concurrency() - 1};
     boost::asio::signal_set signals {workers.get_executor(), SIGINT, SIGTERM};
