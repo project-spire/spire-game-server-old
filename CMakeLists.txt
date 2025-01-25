@@ -21,6 +21,7 @@ target_include_directories(base_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMA
 add_subdirectory(src/spire/component)
 add_subdirectory(src/spire/container)
 add_subdirectory(src/spire/core)
+add_subdirectory(src/spire/handler)
 add_subdirectory(src/spire/net)
 add_subdirectory(src/spire/system)
 
@@ -71,6 +72,20 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
+FetchContent_Declare(
+    spdlog
+    GIT_REPOSITORY https://github.com/gabime/spdlog.git
+    GIT_TAG v1.15.0
+)
+FetchContent_MakeAvailable(spdlog)
+
+FetchContent_Declare(jwt-cpp
+    GIT_REPOSITORY https://github.com/Thalhammer/jwt-cpp.git
+    GIT_TAG v0.7.0
+)
+set(JWT_BUILD_EXAMPLES OFF CACHE BOOL "Disable the build of jwt-cpp examples" FORCE)
+FetchContent_MakeAvailable(jwt-cpp)
+
 # Linking
 target_link_libraries(base_lib
     PUBLIC
@@ -80,6 +95,9 @@ target_link_libraries(base_lib
     tf::default_settings
     glm
     Taskflow
+    OpenSSL::SSL
+    jwt-cpp::jwt-cpp
+    spdlog::spdlog
 )
 
 

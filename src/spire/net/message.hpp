@@ -24,7 +24,7 @@ struct InMessage {
     InMessage(const InMessage&) = delete;
     InMessage& operator=(const InMessage&) = delete;
 
-    Client& client() const { return *_client; }
+    const std::shared_ptr<Client>& client() const { return _client; }
     std::span<const std::byte> span() const { return std::span {_data.data(), _data.size()}; }
     const std::byte* data() const { return _data.data(); }
     std::byte* data() { return _data.data(); }

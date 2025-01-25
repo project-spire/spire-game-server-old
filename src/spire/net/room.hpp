@@ -12,7 +12,7 @@ public:
     Room(
         u32 id,
         boost::asio::any_io_executor& io_executor,
-        tf::Executor& work_executor,
+        tf::Executor& system_executor,
         MessageHandler&& message_handler);
 
     void start();
@@ -21,6 +21,7 @@ public:
     void add_client_deferred(std::shared_ptr<Client> client);
     void remove_client_deferred(std::shared_ptr<Client> client);
 
+    void post_task(std::function<void()>&& task);
     void post_message(std::unique_ptr<InMessage> message);
     void broadcast_message_deferred(std::shared_ptr<OutMessage> message);
 
@@ -33,7 +34,7 @@ private:
 
     std::atomic<bool> _is_running {false};
     boost::asio::any_io_executor& _io_executor;
-    tf::Executor& _work_executor;
+    tf::Executor& _system_executor;
 
     ConcurrentQueue<std::function<void()>> _tasks {};
     ConcurrentQueue<std::unique_ptr<InMessage>> _messages {};

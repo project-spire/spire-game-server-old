@@ -1,24 +1,19 @@
 #pragma once
 
+#include <spire/handler/types.hpp>
 #include <spire/net/message.hpp>
 
 namespace spire::net {
 class MessageHandler {
 public:
-    enum class ResultCode {
-        Continue,
-        Break,
-        Error
-    };
-
     MessageHandler(MessageHandler&& other) noexcept;
     MessageHandler& operator=(MessageHandler&& other) noexcept;
 
-    void add_handler(std::function<ResultCode(const InMessage&)>&& handler);
+    void add_handler(HandlerType&& handler);
     void handle_message(std::unique_ptr<InMessage> message) const;
 
 private:
-    std::list<std::function<ResultCode(const InMessage&)>> _handlers {};
+    std::list<HandlerType> _handlers {};
 };
 
 
@@ -32,14 +27,19 @@ inline MessageHandler & MessageHandler::operator=(MessageHandler &&other) noexce
     return *this;
 }
 
-inline void MessageHandler::add_handler(std::function<ResultCode(const InMessage&)>&& handler) {
+inline void MessageHandler::add_handler(HandlerType&& handler) {
     _handlers.push_back(std::move(handler));
 }
 
 inline void MessageHandler::handle_message(std::unique_ptr<InMessage> message) const {
+    msg::BaseMessage base {};
+    if (!base.ParseFromArray(message->data(), static_cast<int>(message->size()))) {
+        message->client()->stop(Client::StopCode::InvalidInMessage);
+    }
+
     for (const auto& handler : _handlers) {
-        const auto result {handler(*message)};
-        if (result == ResultCode::Break || result == ResultCode::Error) break;
+        const auto result {handler(message->client(), base)};
+        if (result == HandlerResult::Break || result == HandlerResult::Error) break;
     }
 }
 }

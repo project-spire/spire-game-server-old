@@ -22,5 +22,7 @@ void Settings::init() {
     // _listen_port = std::stoi(std::getenv("SPIRE_GAME_LISTEN_PORT"));
     _listen_port = 30000;
     _listen_backlog = 4096;
+
+    _auth_jwt_key = read_file_line(std::getenv("SPIRE_AUTH_JWT_KEY_FILE"));
 }
 }

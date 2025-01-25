@@ -66,9 +66,10 @@ void Client::send(std::shared_ptr<OutMessage> message) {
     _connection.send(std::move(message));
 }
 
-void Client::authenticate(const u32 character_id) {
+void Client::authenticate(const u32 account_id, const u32 character_id) {
     _is_authenticated = true;
 
+    _account_id = account_id;
     _character_id = character_id;
 }
 

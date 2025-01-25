@@ -14,6 +14,7 @@ public:
         InvalidInMessage,
         ConnectionError,
         DeadHeartbeat,
+        AuthenticationError
     };
 
     Client(
@@ -27,12 +28,13 @@ public:
     void send(std::unique_ptr<OutMessage> message);
     void send(std::shared_ptr<OutMessage> message);
 
-    void authenticate(u32 character_id);
+    void authenticate(u32 account_id, u32 character_id);
 
     void enter_room_deferred(std::shared_ptr<Room> room);
     void leave_room_deferred();
 
-    u64 id() const { return _character_id; }
+    u64 account_id() const { return _account_id; }
+    u64 character_id() const { return _character_id; }
     milliseconds ping() const { return _ping.load(); }
 
 private:
@@ -47,6 +49,7 @@ private:
 
     std::atomic<std::weak_ptr<Room>> _current_room;
 
+    u64 _account_id {};
     u64 _character_id {};
 };
 }

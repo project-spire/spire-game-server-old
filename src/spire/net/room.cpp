@@ -5,10 +5,11 @@ namespace spire::net {
 Room::Room(
     const u32 id,
     boost::asio::any_io_executor& io_executor,
-    tf::Executor& work_executor,
+    tf::Executor& system_executor,
     MessageHandler&& message_handler)
     : _id {id},
-    _io_executor {io_executor}, _work_executor {work_executor},
+    _io_executor {io_executor},
+    _system_executor {system_executor},
     _message_handler {std::move(message_handler)} {}
 
 void Room::start() {
@@ -33,6 +34,10 @@ void Room::remove_client_deferred(std::shared_ptr<Client> client) {
     _tasks.push([self = shared_from_this(), client = std::move(client)] {
         self->_clients.erase(client->id());
     });
+}
+
+void Room::post_task(std::function<void()>&& task) {
+    _tasks.push(std::move(task));
 }
 
 void Room::post_message(std::unique_ptr<InMessage> message) {
@@ -73,13 +78,15 @@ void Room::update(const time_point<steady_clock> last_update_time) {
         [this, dt] { physics::PhysicsSystem::update(_registry, dt); },
         [this, dt] {/*Do another task*/}
     );
-
     physics_task.precede(my_task);
 
-    _work_executor.run(std::move(system_taskflow)).wait();
 
-    post(_io_executor, [self = shared_from_this(), now] {
-        self->update(now);
-    });
+    auto update_more = [self = shared_from_this(), now] mutable {
+        post(self->_io_executor, [self = std::move(self), now] {
+            self->update(now);
+        });
+    };
+
+    _system_executor.run(system_taskflow, std::move(update_more));
 }
 }
