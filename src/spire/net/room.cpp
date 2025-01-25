@@ -35,10 +35,8 @@ void Room::remove_client_deferred(std::shared_ptr<Client> client) {
     });
 }
 
-void Room::handle_message_deferred(std::unique_ptr<InMessage> message) {
-    _messages.push([self = shared_from_this(), message = std::move(message)] mutable {
-        self->_message_handler.handle_message(std::move(message));
-    });
+void Room::post_message(std::unique_ptr<InMessage> message) {
+    _messages.push(std::move(message));
 }
 
 void Room::broadcast_message_deferred(std::shared_ptr<OutMessage> message) {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <entt/entt.hpp>
+#include <spire/container/concurrent_queue.hpp>
 #include <spire/net/client.hpp>
 #include <spire/net/message_handler.hpp>
 #include <taskflow/taskflow.hpp>
@@ -20,7 +21,7 @@ public:
     void add_client_deferred(std::shared_ptr<Client> client);
     void remove_client_deferred(std::shared_ptr<Client> client);
 
-    void handle_message_deferred(std::unique_ptr<InMessage> message);
+    void post_message(std::unique_ptr<InMessage> message);
     void broadcast_message_deferred(std::shared_ptr<OutMessage> message);
 
     u32 id() const { return _id; }

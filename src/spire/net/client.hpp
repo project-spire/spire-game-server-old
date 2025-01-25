@@ -27,7 +27,7 @@ public:
     void send(std::unique_ptr<OutMessage> message);
     void send(std::shared_ptr<OutMessage> message);
 
-    void authenticate();
+    void authenticate(u32 character_id);
 
     void enter_room_deferred(std::shared_ptr<Room> room);
     void leave_room_deferred();

@@ -31,7 +31,7 @@ Client::Client(
             }
 
             if (const auto room {self->_current_room.load().lock()}; room) {
-                room->handle_message_deferred(
+                room->post_message(
                     std::make_unique<InMessage>(self->shared_from_this(), std::move(data)));
             }
         }},
@@ -66,8 +66,10 @@ void Client::send(std::shared_ptr<OutMessage> message) {
     _connection.send(std::move(message));
 }
 
-void Client::authenticate() {
+void Client::authenticate(const u32 character_id) {
     _is_authenticated = true;
+
+    _character_id = character_id;
 }
 
 void Client::enter_room_deferred(std::shared_ptr<Room> room) {
