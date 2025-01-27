@@ -5,8 +5,7 @@
 namespace spire::net {
 Client::Client(
     boost::asio::ip::tcp::socket&& socket,
-    std::function<void(std::shared_ptr<Client>)>&& on_stop,
-    const std::shared_ptr<Room>& current_room)
+    std::function<void(std::shared_ptr<Client>)>&& on_stop)
     : _strand {make_strand(socket.get_executor())},
     _heartbeater {
           socket.get_executor(),
@@ -15,7 +14,7 @@ Client::Client(
               msg::BaseMessage base;
               base.set_allocated_heartbeat(&heartbeat);
 
-              self->send(std::make_unique<OutMessage>(&base));
+              self->send(std::make_unique<OutMessage>(base));
           },
           [self = shared_from_this()] {
               self->stop(StopCode::DeadHeartbeat);
@@ -35,8 +34,11 @@ Client::Client(
                     std::make_unique<InMessage>(self->shared_from_this(), std::move(data)));
             }
         }},
-    _on_stop {std::move(on_stop)},
-    _current_room {current_room} {}
+    _on_stop {std::move(on_stop)} {}
+
+Client::~Client() {
+    stop(StopCode::Normal);
+}
 
 void Client::start() {
     if (_is_running.exchange(true)) return;
@@ -71,26 +73,5 @@ void Client::authenticate(const u32 account_id, const u32 character_id) {
 
     _account_id = account_id;
     _character_id = character_id;
-}
-
-void Client::enter_room_deferred(std::shared_ptr<Room> room) {
-    dispatch(_strand, [self = shared_from_this(), room = std::move(room)] mutable {
-        if (const auto previous_room {self->_current_room.load().lock()}) {
-            previous_room->remove_client_deferred(self);
-        }
-
-        self->_current_room = room;
-        room->add_client_deferred(std::move(self));
-    });
-}
-
-void Client::leave_room_deferred() {
-    dispatch(_strand, [self = shared_from_this()] mutable {
-        const auto previous_room {self->_current_room.load().lock()};
-        if (!previous_room) return;
-
-        self->_current_room.load().reset();
-        previous_room->remove_client_deferred(std::move(self));
-    });
 }
 }

@@ -37,12 +37,12 @@ private:
 
 struct OutMessage {
     explicit OutMessage(MessageHeader header);
-    explicit OutMessage(const msg::BaseMessage* body);
+    explicit OutMessage(const msg::BaseMessage& body);
     ~OutMessage() = default;
     OutMessage(const OutMessage&) = delete;
     OutMessage& operator=(const OutMessage&) = delete;
 
-    void serialize(const msg::BaseMessage* body);
+    void serialize(const msg::BaseMessage& body);
 
     std::span<const std::byte> span() const { return std::span {_data.data(), _data.size()}; }
     bool empty() const { return _data.empty(); }

@@ -8,6 +8,10 @@ Connection::Connection(
     : _strand {make_strand(socket.get_executor())}, _socket {std::move(socket)},
     _on_closed {std::move(on_closed)}, _on_received {std::move(on_received)} {}
 
+Connection::~Connection() {
+    close(CloseCode::Normal);
+}
+
 void Connection::open() {
     if (_is_open.exchange(true)) return;
 

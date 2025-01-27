@@ -17,6 +17,7 @@ public:
         boost::asio::ip::tcp::socket&& socket,
         std::function<void(CloseCode)>&& on_closed,
         std::function<void(std::vector<std::byte>&&)>&& on_received);
+    ~Connection();
 
     void open();
     void close(CloseCode code);

@@ -19,8 +19,8 @@ public:
 
     Client(
         boost::asio::ip::tcp::socket&& socket,
-        std::function<void(std::shared_ptr<Client>)>&& on_stop,
-        const std::shared_ptr<Room>& current_room);
+        std::function<void(std::shared_ptr<Client>)>&& on_stop);
+    ~Client();
 
     void start();
     void stop(StopCode code);
@@ -30,12 +30,10 @@ public:
 
     void authenticate(u32 account_id, u32 character_id);
 
-    void enter_room_deferred(std::shared_ptr<Room> room);
-    void leave_room_deferred();
-
     u64 account_id() const { return _account_id; }
     u64 character_id() const { return _character_id; }
     milliseconds ping() const { return _ping.load(); }
+    std::atomic<std::weak_ptr<Room>>& current_room() { return _current_room; }
 
 private:
     boost::asio::strand<boost::asio::any_io_executor> _strand;

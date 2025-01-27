@@ -9,11 +9,11 @@ public:
     MessageHandler(MessageHandler&& other) noexcept;
     MessageHandler& operator=(MessageHandler&& other) noexcept;
 
-    void add_handler(HandlerType&& handler);
+    void add_handler(HandlerFunction&& handler);
     void handle_message(std::unique_ptr<InMessage> message) const;
 
 private:
-    std::list<HandlerType> _handlers {};
+    std::list<HandlerFunction> _handlers {};
 };
 
 
@@ -27,7 +27,7 @@ inline MessageHandler & MessageHandler::operator=(MessageHandler &&other) noexce
     return *this;
 }
 
-inline void MessageHandler::add_handler(HandlerType&& handler) {
+inline void MessageHandler::add_handler(HandlerFunction&& handler) {
     _handlers.push_back(std::move(handler));
 }
 

@@ -5,7 +5,7 @@
 namespace spire {
 class AuthHandler final {
 public:
-    static HandlerType make();
+    static HandlerFunction make();
 
 private:
     static HandlerResult handle(const std::shared_ptr<net::Client>& client, const msg::BaseMessage& base);

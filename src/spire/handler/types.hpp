@@ -10,5 +10,5 @@ enum class HandlerResult {
     Error
 };
 
-using HandlerType = std::function<HandlerResult(const std::shared_ptr<net::Client>&, const msg::BaseMessage&)>;
+using HandlerFunction = std::function<HandlerResult(const std::shared_ptr<net::Client>&, const msg::BaseMessage&)>;
 }

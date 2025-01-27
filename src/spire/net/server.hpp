@@ -13,8 +13,9 @@ public:
     void start();
     void stop();
 
-    void add_client_deferred(boost::asio::ip::tcp::socket&& socket);
+    void create_client_deferred(boost::asio::ip::tcp::socket&& socket);
     void remove_client_deferred(std::shared_ptr<Client> client);
+    void transfer_client_deferred(std::shared_ptr<Client> client, u32 target_room_id);
 
     void add_room_deferred(std::shared_ptr<Room> room);
     void remove_room_deferred(u32 room_id);
@@ -27,11 +28,9 @@ private:
     tf::Executor _work_executor {};
 
     boost::asio::ip::tcp::acceptor _acceptor;
-    std::shared_ptr<Room> _waiting_room;
-    std::unordered_set<std::shared_ptr<Client>> _waiting_clients {};
 
     std::unordered_map<u64, std::shared_ptr<Client>> _clients {};
-
+    std::shared_ptr<Room> _waiting_room;
     std::unordered_map<u32, std::shared_ptr<Room>> _rooms {};
 };
 }

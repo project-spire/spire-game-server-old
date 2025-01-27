@@ -3,7 +3,7 @@
 #include <spire/handler/auth_handler.hpp>
 
 namespace spire {
-HandlerType AuthHandler::make() {
+HandlerFunction AuthHandler::make() {
     return [](const std::shared_ptr<net::Client>& client, const msg::BaseMessage& base) {
         return handle(client, base);
     };
@@ -33,6 +33,8 @@ HandlerResult AuthHandler::handle_login(const std::shared_ptr<net::Client>& clie
         client->stop(net::Client::StopCode::AuthenticationError);
         return HandlerResult::Error;
     }
+
+
 
     //TODO: Async read from DB and callback
     {

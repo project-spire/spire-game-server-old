@@ -7,13 +7,14 @@
 #include <taskflow/taskflow.hpp>
 
 namespace spire::net {
-class Room final : std::enable_shared_from_this<Room>, boost::noncopyable {
+class Room : std::enable_shared_from_this<Room>, boost::noncopyable {
 public:
     Room(
         u32 id,
         boost::asio::any_io_executor& io_executor,
         tf::Executor& system_executor,
         MessageHandler&& message_handler);
+    virtual ~Room();
 
     void start();
     void stop();
@@ -28,8 +29,16 @@ public:
     u32 id() const { return _id; }
 
 private:
-    void update(time_point<steady_clock> last_update_time);
+    virtual void on_client_entered(const std::shared_ptr<Client>& client) {}
+    virtual void on_client_left(const std::shared_ptr<Client>& client) {}
 
+    void update(time_point<steady_clock> last_update_time);
+    virtual void compose_systems(tf::Taskflow& system_taskflow, time_point<steady_clock> now, f32 dt) {}
+
+protected:
+    entt::registry _registry {};
+
+private:
     const u32 _id;
 
     std::atomic<bool> _is_running {false};
@@ -41,6 +50,5 @@ private:
     MessageHandler _message_handler;
 
     std::unordered_map<u64, std::shared_ptr<Client>> _clients {};
-    entt::registry _registry {};
 };
 }

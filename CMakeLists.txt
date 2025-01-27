@@ -24,6 +24,11 @@ add_subdirectory(src/spire/core)
 add_subdirectory(src/spire/handler)
 add_subdirectory(src/spire/net)
 add_subdirectory(src/spire/system)
+add_subdirectory(src/spire/room)
+
+target_compile_definitions(base_lib
+    PUBLIC SPIRE_SETTINGS_FILE="${CMAKE_CURRENT_SOURCE_DIR}/settings.yaml"
+)
 
 add_executable(game_server
     src/spire/main.cpp
@@ -35,28 +40,7 @@ target_link_libraries(game_server PRIVATE spire::base_lib)
 # ----------------------------------------------------------------
 include(FetchContent)
 
-find_package(Boost 1.87.0 REQUIRED COMPONENTS system)
-
-find_package(OpenSSL REQUIRED)
-
-FetchContent_Declare(
-    protobuf
-    GIT_REPOSITORY https://github.com/protocolbuffers/protobuf.git
-    GIT_TAG v29.3
-)
-FetchContent_MakeAvailable(protobuf)
-option(protobuf_INSTALL "Install protobuf binaries and files" OFF)
-option(protobuf_BUILD_TESTS "Build tests" OFF)
-set(protobuf_VERBOSE OFF)
-
-FetchContent_Declare(
-    Taskflow
-    GIT_REPOSITORY https://github.com/taskflow/taskflow.git
-    GIT_TAG v3.9.0
-)
-FetchContent_MakeAvailable(Taskflow)
-option(TF_BUILD_TESTS "Enables builds of tests" OFF)
-option(TF_BUILD_EXAMPLES "Enables builds of examples" OFF)
+find_package(Boost 1.87.0 REQUIRED COMPONENTS system charconv)
 
 FetchContent_Declare(
     EnTT
@@ -72,6 +56,25 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
+FetchContent_Declare(jwt-cpp
+    GIT_REPOSITORY https://github.com/Thalhammer/jwt-cpp.git
+    GIT_TAG v0.7.0
+)
+FetchContent_MakeAvailable(jwt-cpp)
+set(JWT_BUILD_EXAMPLES OFF CACHE BOOL "Disable the build of jwt-cpp examples" FORCE)
+
+find_package(OpenSSL REQUIRED)
+
+FetchContent_Declare(
+    protobuf
+    GIT_REPOSITORY https://github.com/protocolbuffers/protobuf.git
+    GIT_TAG v29.3
+)
+FetchContent_MakeAvailable(protobuf)
+option(protobuf_INSTALL "Install protobuf binaries and files" OFF)
+option(protobuf_BUILD_TESTS "Build tests" OFF)
+set(protobuf_VERBOSE OFF)
+
 FetchContent_Declare(
     spdlog
     GIT_REPOSITORY https://github.com/gabime/spdlog.git
@@ -79,27 +82,38 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(spdlog)
 
-FetchContent_Declare(jwt-cpp
-    GIT_REPOSITORY https://github.com/Thalhammer/jwt-cpp.git
-    GIT_TAG v0.7.0
+FetchContent_Declare(
+    Taskflow
+    GIT_REPOSITORY https://github.com/taskflow/taskflow.git
+    GIT_TAG v3.9.0
 )
-set(JWT_BUILD_EXAMPLES OFF CACHE BOOL "Disable the build of jwt-cpp examples" FORCE)
-FetchContent_MakeAvailable(jwt-cpp)
+FetchContent_MakeAvailable(Taskflow)
+option(TF_BUILD_TESTS "Enables builds of tests" OFF)
+option(TF_BUILD_EXAMPLES "Enables builds of examples" OFF)
+
+FetchContent_Declare(
+    yaml-cpp
+    GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+    GIT_TAG 0.8.0
+)
+FetchContent_MakeAvailable(yaml-cpp)
 
 # Linking
 target_link_libraries(base_lib
     PUBLIC
+    Boost::charconv
     Boost::system
     EnTT::EnTT
-    protobuf::libprotobuf
-    tf::default_settings
     glm
-    Taskflow
-    OpenSSL::SSL
     jwt-cpp::jwt-cpp
+    OpenSSL::Crypto
+    OpenSSL::SSL
+    protobuf::libprotobuf
     spdlog::spdlog
+    Taskflow
+    yaml-cpp::yaml-cpp
 )
-
+target_compile_definitions(base_lib PUBLIC BOOST_MYSQL_SEPARATE_COMPILATION) # Enable Boost::mysql separate compilation
 
 # Protobuf compilations
 # ----------------------------------------------------------------

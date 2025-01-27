@@ -12,6 +12,10 @@ Room::Room(
     _system_executor {system_executor},
     _message_handler {std::move(message_handler)} {}
 
+Room::~Room() {
+    stop();
+}
+
 void Room::start() {
     if (_is_running.exchange(true)) return;
 
@@ -22,17 +26,23 @@ void Room::start() {
 
 void Room::stop() {
     if (!_is_running.exchange(false)) return;
+
+    //TODO: Cleanup <- Data race with update function
 }
 
 void Room::add_client_deferred(std::shared_ptr<Client> client) {
-    _tasks.push([self = shared_from_this(), client = std::move(client)] mutable {
-        self->_clients.insert_or_assign(client->id(), std::move(client));
+    _tasks.push([this, client = std::move(client)] mutable {
+        _clients.insert_or_assign(client->id(), client);
+
+        on_client_entered(client);
     });
 }
 
 void Room::remove_client_deferred(std::shared_ptr<Client> client) {
-    _tasks.push([self = shared_from_this(), client = std::move(client)] {
-        self->_clients.erase(client->id());
+    _tasks.push([this, client = std::move(client)] {
+        _clients.erase(client->id());
+
+        on_client_left(client);
     });
 }
 
@@ -71,15 +81,8 @@ void Room::update(const time_point<steady_clock> last_update_time) {
         tasks.pop();
     }
 
-    // TODO: Make the taskflow once, and reuse it.
     tf::Taskflow system_taskflow {};
-
-    auto [physics_task, my_task] = system_taskflow.emplace(
-        [this, dt] { physics::PhysicsSystem::update(_registry, dt); },
-        [this, dt] {/*Do another task*/}
-    );
-    physics_task.precede(my_task);
-
+    compose_systems(system_taskflow, now, dt);
 
     auto update_more = [self = shared_from_this(), now] mutable {
         post(self->_io_executor, [self = std::move(self), now] {
@@ -87,6 +90,6 @@ void Room::update(const time_point<steady_clock> last_update_time) {
         });
     };
 
-    _system_executor.run(system_taskflow, std::move(update_more));
+    _system_executor.run(std::move(system_taskflow), std::move(update_more));
 }
 }

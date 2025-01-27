@@ -33,8 +33,8 @@ OutMessage::OutMessage(const MessageHeader header) {
     MessageHeader::serialize(header, std::span<std::byte, sizeof(MessageHeader)> {_data.data(), sizeof(MessageHeader)});
 }
 
-OutMessage::OutMessage(const msg::BaseMessage* body) {
-    const size_t body_size {body->ByteSizeLong()};
+OutMessage::OutMessage(const msg::BaseMessage& body) {
+    const size_t body_size {body.ByteSizeLong()};
 
     if (body_size > std::numeric_limits<decltype(MessageHeader::body_size)>::max())
         throw std::length_error("OutMessage body size too large");
@@ -47,10 +47,10 @@ OutMessage::OutMessage(const msg::BaseMessage* body) {
     serialize(body);
 }
 
-void OutMessage::serialize(const msg::BaseMessage* body) {
+void OutMessage::serialize(const msg::BaseMessage& body) {
     std::ospanstream os {std::span {
         reinterpret_cast<char*>(_data.data()) + sizeof(MessageHeader), _data.size() - sizeof(MessageHeader)}};
 
-    body->SerializeToOstream(&os);
+    body.SerializeToOstream(&os);
 }
 }

@@ -1,5 +1,7 @@
+#include <spdlog/spdlog.h>
 #include <spire/core/settings.hpp>
 #include <spire/net/server.hpp>
+#include <spire/room/waiting_room.hpp>
 
 namespace spire::net {
 Server::Server(boost::asio::any_io_executor&& io_executor)
@@ -8,7 +10,7 @@ Server::Server(boost::asio::any_io_executor&& io_executor)
     _acceptor {
         make_strand(_io_executor),
         boost::asio::ip::tcp::endpoint {boost::asio::ip::tcp::v4(), Settings::listen_port()}},
-    _waiting_room {std::make_shared<Room>(0, make_strand(_io_executor), WaitingRoomMessageHandler::make())} {
+    _waiting_room {std::make_shared<WaitingRoom>(0, _io_executor, _work_executor)} {
     _acceptor.set_option(boost::asio::socket_base::reuse_address(true));
     _acceptor.listen(Settings::listen_backlog());
 }
@@ -27,19 +29,23 @@ void Server::start() {
             if (ec) {
                 if (ec == boost::asio::error::operation_aborted) continue;
 
-                //TODO: Warning log
+                spdlog::warn("Error accepting socket");
                 continue;
             }
 
             socket.set_option(boost::asio::ip::tcp::no_delay(true), ec);
             if (ec) {
-                //TODO: Warning log
+                spdlog::warn("Error setting socket option");
                 continue;
             }
 
-            add_client_deferred(std::move(socket));
+            create_client_deferred(std::move(socket));
         }
     }, boost::asio::detached);
+
+    _waiting_room->start();
+    for (const auto& room : _rooms | std::views::values)
+        room->start();
 }
 
 void Server::stop() {
@@ -50,22 +56,36 @@ void Server::stop() {
         _acceptor.close(ec);
     }
 
-    for (auto& client : _waiting_clients) {
-        client->stop(Client::StopCode::Normal);
-    }
+    std::promise<void> cleanup_promise {};
+    const auto cleanup_future {cleanup_promise.get_future()};
+
+    dispatch(_io_strand, [this, cleanup_promise = std::move(cleanup_promise)] mutable {
+        spdlog::info("Server cleanup...");
+
+        for (const auto& client : _clients | std::views::values)
+            client->stop(Client::StopCode::Normal);
+
+        _waiting_room->stop();
+        for (const auto& room : _rooms | std::views::values)
+            room->start();
+
+        cleanup_promise.set_value();
+    });
+    cleanup_future.wait();
+
+    spdlog::info("Server cleanup done.");
 }
 
-void Server::add_client_deferred(boost::asio::ip::tcp::socket&& socket) {
-    auto new_client = std::make_shared<Client>(
+void Server::create_client_deferred(boost::asio::ip::tcp::socket&& socket) {
+    auto new_client {std::make_shared<Client>(
         std::move(socket),
         [this](std::shared_ptr<Client> client) mutable {
             remove_client_deferred(std::move(client));
-        },
-        _waiting_room);
+        })};
 
     dispatch(_io_strand, [this, new_client = std::move(new_client)] mutable {
-        _waiting_clients.insert(new_client);
-        new_client->start();
+        _clients.insert(new_client->id(), new_client);
+        _waiting_room->add_client_deferred(new_client);
     });
 }
 
@@ -73,7 +93,24 @@ void Server::remove_client_deferred(std::shared_ptr<Client> client) {
     client->stop(Client::StopCode::Normal);
 
     dispatch(_io_strand, [this, client = std::move(client)] {
-        _waiting_clients.erase(client);
+        if (const auto current_room {client->current_room().load().lock()}) {
+            current_room->remove_client_deferred(client);
+        }
+        _clients.erase(client->id());
+    });
+}
+
+void Server::transfer_client_deferred(std::shared_ptr<Client> client, const u32 target_room_id) {
+    dispatch(_io_strand, [this, client = std::move(client), target_room_id] {
+        if (_rooms.contains(target_room_id)) {
+            spdlog::warn("No room with target id {}.", target_room_id);
+            return;
+        }
+
+        if (const auto current_room {client->current_room().load().lock()}) {
+            current_room->remove_client_deferred(client);
+        }
+        _rooms.at(target_room_id)->add_client_deferred(client);
     });
 }
 
