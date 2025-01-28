@@ -24,6 +24,8 @@ void Server::start() {
 
     // Spawn acceptor loop
     co_spawn(_io_executor, [this] -> boost::asio::awaitable<void> {
+        spdlog::info("Server listening on port {}", Settings::listen_port());
+
         while (_is_running) {
             auto [ec, socket] = co_await _acceptor.async_accept(boost::asio::as_tuple(boost::asio::use_awaitable));
             if (ec) {
@@ -39,6 +41,7 @@ void Server::start() {
                 continue;
             }
 
+            spdlog::debug("Server accepted from {}", socket.local_endpoint().address().to_string());
             create_client_deferred(std::move(socket));
         }
     }, boost::asio::detached);
@@ -59,7 +62,7 @@ void Server::stop() {
     std::promise<void> cleanup_promise {};
     const auto cleanup_future {cleanup_promise.get_future()};
 
-    dispatch(_io_strand, [this, cleanup_promise = std::move(cleanup_promise)] mutable {
+    post(_io_strand, [this, cleanup_promise = std::move(cleanup_promise)] mutable {
         spdlog::info("Server cleanup...");
 
         for (const auto& client : _clients | std::views::values)
@@ -67,7 +70,7 @@ void Server::stop() {
 
         _waiting_room->stop();
         for (const auto& room : _rooms | std::views::values)
-            room->start();
+            room->stop();
 
         cleanup_promise.set_value();
     });
@@ -77,15 +80,19 @@ void Server::stop() {
 }
 
 void Server::create_client_deferred(boost::asio::ip::tcp::socket&& socket) {
+    static std::atomic<u64> temp_client_id_generator {0};
+
     auto new_client {std::make_shared<Client>(
+        ++temp_client_id_generator,
         std::move(socket),
+        _waiting_room,
         [this](std::shared_ptr<Client> client) mutable {
             remove_client_deferred(std::move(client));
         })};
 
     dispatch(_io_strand, [this, new_client = std::move(new_client)] mutable {
-        _clients.insert(new_client->id(), new_client);
-        _waiting_room->add_client_deferred(new_client);
+        _clients[new_client->id()] = new_client;
+        _waiting_room->add_client_deferred(std::move(new_client));
     });
 }
 

@@ -1,10 +1,13 @@
+#include <spdlog/spdlog.h>
 #include <spire/net/client.hpp>
 #include <spire/net/room.hpp>
 #include <spire/msg/base_message.pb.h>
 
 namespace spire::net {
 Client::Client(
+    const u64 id,
     boost::asio::ip::tcp::socket&& socket,
+    const std::shared_ptr<Room>& current_room,
     std::function<void(std::shared_ptr<Client>)>&& on_stop)
     : _strand {make_strand(socket.get_executor())},
     _heartbeater {
@@ -34,7 +37,9 @@ Client::Client(
                     std::make_unique<InMessage>(self->shared_from_this(), std::move(data)));
             }
         }},
-    _on_stop {std::move(on_stop)} {}
+    _on_stop {std::move(on_stop)},
+    _current_room {current_room},
+    _character_id {id} {}
 
 Client::~Client() {
     stop(StopCode::Normal);
@@ -50,10 +55,8 @@ void Client::stop(const StopCode code) {
     if (!_is_running.exchange(false)) return;
 
     if (code != StopCode::Normal) {
-        //TODO: Log
+        spdlog::debug("Client stopped abnormally with code {}", std::to_underlying(code));
     }
-
-    leave_room_deferred();
 
     _connection.close(Connection::CloseCode::Normal);
 

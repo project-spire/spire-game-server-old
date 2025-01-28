@@ -7,7 +7,7 @@
 namespace spire::net {
 class Connection final : boost::noncopyable {
 public:
-    enum class CloseCode {
+    enum class CloseCode : u8 {
         Normal,
         ReceiveError,
         SendError
