@@ -13,12 +13,12 @@ public:
         SendError
     };
 
-    Connection(
-        boost::asio::ip::tcp::socket&& socket,
-        std::function<void(CloseCode)>&& on_closed,
-        std::function<void(std::vector<std::byte>&&)>&& on_received);
+    explicit Connection(boost::asio::ip::tcp::socket&& socket);
     ~Connection();
 
+    void init(
+        std::function<void(CloseCode)>&& on_closed,
+        std::function<void(std::vector<std::byte>&&)>&& on_received);
     void open();
     void close(CloseCode code);
 
@@ -30,6 +30,8 @@ private:
 
     boost::asio::strand<boost::asio::any_io_executor> _strand;
     boost::asio::ip::tcp::socket _socket;
+    boost::asio::cancellation_signal _cancelled {};
+
     std::atomic<bool> _is_open {false};
 
     std::function<void(CloseCode)> _on_closed;

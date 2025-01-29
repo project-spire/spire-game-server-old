@@ -5,8 +5,8 @@ target_sources(base_lib PUBLIC
     connection.hpp
     district.cpp
     district.hpp
-    heartbeater.cpp
-    heartbeater.hpp
+    heartbeat.cpp
+    heartbeat.hpp
     message.cpp
     message.hpp
     room.cpp

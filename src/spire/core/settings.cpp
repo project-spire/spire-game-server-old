@@ -32,5 +32,8 @@ void Settings::init() {
     _db_name = std::getenv("SPIRE_DB_NAME");
     _db_user = std::getenv("SPIRE_DB_USER");
     _db_password = read_file_line(std::getenv("SPIRE_DB_PASSWORD_FILE"));
+
+    _heartbeat_interval = milliseconds {settings["heartbeat_interval"].as<u32>()};
+    _heartbeat_retries = settings["heartbeat_retries"].as<u8>();
 }
 }

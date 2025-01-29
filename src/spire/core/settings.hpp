@@ -18,6 +18,9 @@ public:
     static std::string_view db_user() { return _db_user; }
     static std::string_view db_password() { return _db_password; }
 
+    static milliseconds heartbeat_interval() { return _heartbeat_interval; }
+    static u8 heartbeat_retries() { return _heartbeat_retries; }
+
 private:
     inline static u16 _listen_port;
     inline static u16 _listen_backlog;
@@ -29,5 +32,8 @@ private:
     inline static std::string _db_name;
     inline static std::string _db_user;
     inline static std::string _db_password;
+
+    inline static milliseconds _heartbeat_interval;
+    inline static u8 _heartbeat_retries;
 };
 }

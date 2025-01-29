@@ -1,7 +1,7 @@
 #pragma once
 
 #include <spire/net/connection.hpp>
-#include <spire/net/heartbeater.hpp>
+#include <spire/net/heartbeat.hpp>
 #include <spire/net/message.hpp>
 
 namespace spire::net {
@@ -13,7 +13,7 @@ public:
         Normal,
         InvalidInMessage,
         ConnectionError,
-        DeadHeartbeat,
+        HeartbeatDead,
         AuthenticationError
     };
 
@@ -23,6 +23,12 @@ public:
         const std::shared_ptr<Room>& current_room,
         std::function<void(std::shared_ptr<Client>)>&& on_stop);
     ~Client();
+
+    static std::shared_ptr<Client> make(
+        u64 id,
+        boost::asio::ip::tcp::socket&& socket,
+        const std::shared_ptr<Room>& current_room,
+        std::function<void(std::shared_ptr<Client>)>&& on_stop);
 
     void start();
     void stop(StopCode code);
@@ -38,9 +44,12 @@ public:
     milliseconds ping() const { return _ping.load(); }
     std::atomic<std::weak_ptr<Room>>& current_room() { return _current_room; }
 
+    std::string display() const;
+
 private:
     boost::asio::strand<boost::asio::any_io_executor> _strand;
-    Heartbeater _heartbeater;
+
+    Heartbeat _heartbeat;
     Connection _connection;
     std::atomic<milliseconds> _ping {};
 

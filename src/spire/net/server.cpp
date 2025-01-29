@@ -42,7 +42,7 @@ void Server::start() {
             }
 
             spdlog::debug("Server accepted from {}", socket.local_endpoint().address().to_string());
-            create_client_deferred(std::move(socket));
+            add_client_deferred(std::move(socket));
         }
     }, boost::asio::detached);
 
@@ -79,10 +79,10 @@ void Server::stop() {
     spdlog::info("Server cleanup done.");
 }
 
-void Server::create_client_deferred(boost::asio::ip::tcp::socket&& socket) {
+void Server::add_client_deferred(boost::asio::ip::tcp::socket&& socket) {
     static std::atomic<u64> temp_client_id_generator {0};
 
-    auto new_client {std::make_shared<Client>(
+    auto new_client {Client::make(
         ++temp_client_id_generator,
         std::move(socket),
         _waiting_room,
