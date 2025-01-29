@@ -28,11 +28,11 @@ public:
     u32 id() const { return _id; }
 
 private:
-    virtual void on_client_entered(const std::shared_ptr<Client>& client) {}
-    virtual void on_client_left(const std::shared_ptr<Client>& client) {}
+    virtual void on_client_entered(const std::shared_ptr<Client>& /*client*/) {}
+    virtual void on_client_left(const std::shared_ptr<Client>& /*client*/) {}
 
     void update(time_point<steady_clock> last_update_time);
-    virtual void compose_systems(tf::Taskflow& taskflow, time_point<steady_clock> now, f32 dt) {}
+    virtual void compose_systems(tf::Taskflow& /*taskflow*/, time_point<steady_clock> /*now*/, f32 /*dt*/) {}
 
 protected:
     HandlerController _handler_controller {};

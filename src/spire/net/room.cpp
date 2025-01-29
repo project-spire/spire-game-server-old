@@ -61,7 +61,8 @@ void Room::broadcast_message_deferred(std::shared_ptr<OutMessage> message) {
 }
 
 void Room::update(const time_point<steady_clock> last_update_time) {
-    if (!_is_running) return;
+    if (!_is_running)
+        return;
 
     tf::Taskflow taskflow {};
 
@@ -88,11 +89,9 @@ void Room::update(const time_point<steady_clock> last_update_time) {
 
     // Run and update again
     // TODO: The shorter a room's update time, the more it updates --> Uneven updates
-    // --> Use co_spawn and sleep for minimum interval rate? <-- Don't use this_thread::sleep because it will block the thread, so that reduces worker in the thread pool
-    _work_executor.run(std::move(taskflow), [self = shared_from_this(), now] mutable {
-        defer(self->_io_executor, [self, now] {
-            self->update(now);
-        });
-    });
+    // --> Use co_spawn and sleep for minimum interval rate? <-- Don't use this_thread::sleep because it will block the
+    // thread, so that reduces worker in the thread pool
+    _work_executor.run(std::move(taskflow),
+        [self = shared_from_this(), now] mutable { defer(self->_io_executor, [self, now] { self->update(now); }); });
 }
-}
+} // namespace spire::net
