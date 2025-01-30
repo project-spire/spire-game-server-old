@@ -1,10 +1,10 @@
 #pragma once
 
-#include <entt/entt.hpp>
 #include <spire/container/concurrent_queue.hpp>
 #include <spire/net/client.hpp>
 #include <spire/handler/handler_controller.hpp>
-#include <taskflow/taskflow.hpp>
+
+#include <ranges>
 
 namespace spire::net {
 template <typename ClientType>
@@ -23,10 +23,7 @@ class Room : public std::enable_shared_from_this<Room<ClientType>>, boost::nonco
     };
 
 public:
-    Room(
-        u32 id,
-        boost::asio::any_io_executor& io_executor,
-        tf::Executor* work_executor = nullptr);
+    Room(u32 id, boost::asio::any_io_executor& io_executor);
     virtual ~Room();
 
     void start();
@@ -50,37 +47,30 @@ private:
     virtual void on_client_left(const std::shared_ptr<ClientType>& /*client*/) {}
 
     void update(time_point<steady_clock> last_update_time);
-    virtual void compose_systems(tf::Taskflow& /*taskflow*/, time_point<steady_clock> /*now*/, f32 /*dt*/) {}
+    virtual void update_internal(time_point<steady_clock> /*now*/, f32 /*dt*/) {}
 
 protected:
     HandlerController<ClientType> _handler_controller {};
-    entt::registry _registry {};
 
 private:
     const u32 _id;
     std::atomic<State> _state {State::Idle};
 
     boost::asio::any_io_executor& _io_executor;
-    tf::Executor* _work_executor;
 
+    std::unordered_map<std::shared_ptr<ClientType>, typename ClientType::Signals> _clients {};
     ConcurrentQueue<std::function<void()>> _tasks {};
-    ConcurrentQueue<std::unique_ptr<InMessage>> _messages {};
-    std::unordered_map<u64, std::shared_ptr<ClientType>> _clients {};
+    MessageQueue<ClientType> _messages {};
 };
 
 
 template <typename ClientType>
-Room<ClientType>::Room(
-    const u32 id,
-    boost::asio::any_io_executor& io_executor,
-    tf::Executor* work_executor)
-    : _id {id},
-    _io_executor {io_executor},
-    _work_executor {work_executor} {}
+Room<ClientType>::Room(const u32 id, boost::asio::any_io_executor& io_executor)
+    : _id {id}, _io_executor {io_executor} {}
 
 template <typename ClientType>
 Room<ClientType>::~Room() {
-    stop();
+    terminate();
 }
 
 template <typename ClientType>
@@ -114,23 +104,33 @@ void Room<ClientType>::terminate() {
 
 template <typename ClientType>
 void Room<ClientType>::add_client_deferred(std::shared_ptr<ClientType> client) {
+    if (!client) return;
+
     if (_clients.empty()) {
         start();
     }
 
-    _tasks.push([this, client = std::move(client)] mutable {
-        _clients[client->id()] = client;
+    _tasks.push([this, new_client = std::move(client)] mutable {
+        if (!new_client->is_running()) return;
 
-        on_client_entered(client);
+        _clients[new_client] = new_client->bind(
+            &_messages,
+            [this](std::shared_ptr<ClientType> stopped_client, const typename ClientType::StopCode) {
+                remove_client_deferred(stopped_client);
+            });
+
+        on_client_entered(std::move(new_client));
     });
 }
 
 template <typename ClientType>
 void Room<ClientType>::remove_client_deferred(std::shared_ptr<ClientType> client) {
-    _tasks.push([this, client = std::move(client)] {
-        _clients.erase(client->id());
+    if (!client) return;
 
-        on_client_left(client);
+    _tasks.push([this, client = std::move(client)] mutable {
+        if (!_clients.erase(client)) return;
+
+        on_client_left(std::move(client));
     });
 }
 
@@ -142,7 +142,7 @@ void Room<ClientType>::post_task(std::function<void()>&& task) {
 template <typename ClientType>
 void Room<ClientType>::broadcast_message_deferred(std::shared_ptr<OutMessage> message) {
     _tasks.push([self = this->shared_from_this(), message = std::move(message)] {
-        for (const auto& client : self->_clients | std::views::values)
+        for (const auto& client : self->_clients | std::views::keys)
             client->send(message);
     });
 }
@@ -153,10 +153,11 @@ void Room<ClientType>::update(const time_point<steady_clock> last_update_time) {
 
     // TODO: IO threads are handling messages and tasks
     // -> Let work threads handle these
-    std::queue<std::unique_ptr<InMessage>> messages;
+    std::queue<std::pair<std::shared_ptr<ClientType>, std::unique_ptr<InMessage>>> messages;
     _messages.swap(messages);
     while (!messages.empty()) {
-        _handler_controller.handle_message(std::move(messages.front()));
+        auto [client, message] = std::move(messages.front());
+        _handler_controller.handle(client, std::move(message));
         messages.pop();
     }
 
@@ -175,24 +176,10 @@ void Room<ClientType>::update(const time_point<steady_clock> last_update_time) {
     const auto now {steady_clock::now()};
     const f32 dt {duration<f32, std::milli> {now - last_update_time}.count()};
 
-    if (!_work_executor) {
-        //TODO: Use other executor? How?
-        defer(_io_executor, [self = this->shared_from_this(), now] {
-            self->update(now);
-        });
-        return;
-    }
+    update_internal(now, dt);
 
-    tf::Taskflow system_taskflow {};
-    compose_systems(system_taskflow, now, dt);
-
-    // Run and update again
-    // TODO: The shorter a room's update time, the more it updates --> Uneven updates
-    // --> Use co_spawn and sleep for minimum interval rate? <-- Don't use this_thread::sleep because it will block the
-    // thread, so that reduces worker in the thread pool
-    _work_executor->run(std::move(system_taskflow),
-        [self = this->shared_from_this(), now] {
-            defer(self->_io_executor, [self, now] { self->update(now); });
-        });
+    defer(_io_executor, [self = this->shared_from_this(), now] {
+        self->update(now);
+    });
 }
 }

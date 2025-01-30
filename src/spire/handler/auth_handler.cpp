@@ -3,13 +3,13 @@
 #include <spire/handler/auth_handler.hpp>
 
 namespace spire {
-HandlerFunction AuthHandler::make() {
-    return [](const std::shared_ptr<net::Client>& client, const msg::BaseMessage& base) {
+HandlerFunction<net::TcpClient> AuthHandler::make() {
+    return [](const std::shared_ptr<net::TcpClient>& client, const msg::BaseMessage& base) {
         return handle(client, base);
     };
 }
 
-HandlerResult AuthHandler::handle(const std::shared_ptr<net::Client>& client, const msg::BaseMessage& base) {
+HandlerResult AuthHandler::handle(const std::shared_ptr<net::TcpClient>& client, const msg::BaseMessage& base) {
     switch (base.message_case()) {
     case msg::BaseMessage::kLogin:
         return handle_login(client, base.login());
@@ -19,7 +19,7 @@ HandlerResult AuthHandler::handle(const std::shared_ptr<net::Client>& client, co
     }
 }
 
-HandlerResult AuthHandler::handle_login(const std::shared_ptr<net::Client>& client, const msg::Login& login) {
+HandlerResult AuthHandler::handle_login(const std::shared_ptr<net::TcpClient>& client, const msg::Login& login) {
     try {
         const auto decoded_token {jwt::decode(login.token())};
         const auto verifier {jwt::verify()
@@ -30,7 +30,7 @@ HandlerResult AuthHandler::handle_login(const std::shared_ptr<net::Client>& clie
         verifier.verify(decoded_token);
     } catch (const std::exception&) {
         //TODO: Log error
-        client->stop(net::Client::StopCode::AuthenticationError);
+        client->stop(net::TcpClient::StopCode::AuthenticationError);
         return HandlerResult::Error;
     }
 
@@ -38,8 +38,8 @@ HandlerResult AuthHandler::handle_login(const std::shared_ptr<net::Client>& clie
 
     //TODO: Async read from DB and callback
     {
-        const u64 account_id {}, character_id {};
-        client->authenticate(account_id, character_id);
+        // const u64 account_id {}, character_id {};
+        client->authenticate();
     }
 
     return HandlerResult::Break;

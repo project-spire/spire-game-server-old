@@ -5,10 +5,6 @@
 #include <taskflow/taskflow.hpp>
 
 namespace spire::net {
-using GameClient = Client<TcpSocket>;
-using GameDistrict = District<TcpRoom>;
-using AdminClient = Client<SslClient>;
-
 class Server final : boost::noncopyable {
 public:
     explicit Server(boost::asio::any_io_executor&& io_executor);
@@ -16,12 +12,6 @@ public:
 
     void start();
     void stop();
-
-    void add_game_client(TcpSocket&& socket);
-    void add_admin_client(SslSocket&& socket);
-
-    void remove_game_client_deferred(std::shared_ptr<GameClient> client);
-    void transfer_client_deferred(std::shared_ptr<GameClient> client, u32 target_room_id);
 
 private:
     std::atomic<bool> _is_running {false};

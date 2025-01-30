@@ -35,7 +35,7 @@ void HandlerController<ClientType>::handle(
     std::unique_ptr<net::InMessage> message) const {
     msg::BaseMessage base {};
     if (!base.ParseFromArray(message->data(), static_cast<int>(message->size()))) {
-        client->stop(net::ClientStopCode::InvalidInMessage);
+        client->stop(ClientType::StopCode::InvalidInMessage);
     }
 
     for (const auto& handler : _handlers) {

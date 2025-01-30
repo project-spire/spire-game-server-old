@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/signals2.hpp>
 #include <spire/container/concurrent_queue.hpp>
 #include <spire/net/connection.hpp>
 #include <spire/net/heartbeat.hpp>
@@ -12,63 +13,61 @@ class Client;
 using TcpClient = Client<TcpSocket>;
 using SslClient = Client<SslSocket>;
 
-enum class ClientStopCode : u8 {
-    Normal,
-    InvalidInMessage,
-    ConnectionError,
-    HeartbeatDead,
-    AuthenticationError
-};
+template <typename ClientType>
+using MessageQueue = ConcurrentQueue<std::pair<std::shared_ptr<ClientType>, std::unique_ptr<InMessage>>>;
 
 
 template <typename SocketType>
 class Client final : public std::enable_shared_from_this<Client<SocketType>>, boost::noncopyable {
 public:
-    Client(
-        SocketType&& socket,
-        std::function<void(std::shared_ptr<Client>)>&& on_stop);
+    enum class StopCode : u8 {
+        Normal,
+        InvalidInMessage,
+        ConnectionError,
+        HeartbeatDead,
+        AuthenticationError
+    };
+
+    struct Signals {
+        boost::signals2::scoped_connection on_stopped;
+    };
+
+    explicit Client(SocketType&& socket);
     ~Client();
 
-    static std::shared_ptr<Client> make(
-        SocketType&& socket,
-        std::function<void(std::shared_ptr<Client>)>&& on_stop);
+    static std::shared_ptr<Client> make(SocketType&& socket);
 
     void start();
-    void stop(ClientStopCode code);
+    void stop(StopCode code);
 
     void send(std::unique_ptr<OutMessage> message);
     void send(std::shared_ptr<OutMessage> message);
 
-    void authenticate(u32 account_id, u32 character_id);
+    void authenticate();
+    Signals bind(
+        MessageQueue<Client>* message_queue,
+        std::function<void(std::shared_ptr<Client>, StopCode)>&& on_stopped);
 
-    u64 account_id() const { return _account_id; }
-    u64 character_id() const { return _character_id; }
-    milliseconds ping() const { return _ping.load(); }
-    void set_message_queue(ConcurrentQueue<InMessage>* message_queue) { _message_queue = message_queue; }
-
-    std::string display() const;
+    milliseconds ping() const { return _ping; }
+    bool is_running() const { return _is_running; }
 
 private:
-    u64 _account_id {};
-    u64 _character_id {};
     std::atomic<bool> _is_running {false};
     bool _is_authenticated {false};
 
     boost::asio::strand<boost::asio::any_io_executor> _strand;
 
     Connection<SocketType> _connection;
-    std::atomic<ConcurrentQueue<InMessage>*> _message_queue {};
+    std::atomic<MessageQueue<Client>*> _message_queue {};
     Heartbeat _heartbeat;
     std::atomic<milliseconds> _ping {};
 
-    std::function<void(std::shared_ptr<Client>)> _on_stop;
+    boost::signals2::signal<void(std::shared_ptr<Client>, StopCode)> _stopped {};
 };
 
 
 template <typename SocketType>
-Client<SocketType>::Client(
-    SocketType&& socket,
-    std::function<void(std::shared_ptr<Client>)>&& on_stop)
+Client<SocketType>::Client(SocketType&& socket)
     : _strand {make_strand(socket.get_executor())},
     _connection {std::move(socket)},
     _heartbeat {
@@ -80,24 +79,21 @@ Client<SocketType>::Client(
               send(std::make_unique<OutMessage>(base));
           },
           [this] {
-              stop(ClientStopCode::HeartbeatDead);
-          }},
-    _on_stop {std::move(on_stop)} {}
+              stop(StopCode::HeartbeatDead);
+          }} {}
 
 template <typename SocketType>
 Client<SocketType>::~Client() {
-    stop(ClientStopCode::Normal);
+    stop(StopCode::Normal);
 }
 
 template <typename SocketType>
-std::shared_ptr<Client<SocketType>> Client<SocketType>::make(
-    SocketType&& socket,
-    std::function<void(std::shared_ptr<Client>)>&& on_stop) {
-    auto client {std::make_shared<Client>(std::move(socket), std::move(on_stop))};
+std::shared_ptr<Client<SocketType>> Client<SocketType>::make(SocketType&& socket) {
+    auto client {std::make_shared<Client>(std::move(socket))};
 
     client->_connection.init(
-        [self = client->shared_from_this()](const ConnectionCloseCode code) {
-            self->stop(code == ConnectionCloseCode::Normal ? ClientStopCode::Normal : ClientStopCode::ConnectionError);
+        [self = client->shared_from_this()](const typename Connection<SocketType>::CloseCode code) {
+            self->stop(code == Connection<SocketType>::CloseCode::Normal ? StopCode::Normal : StopCode::ConnectionError);
         },
         [self = client->shared_from_this()](std::vector<std::byte>&& data) {
             if (self->_is_authenticated) {
@@ -121,17 +117,13 @@ void Client<SocketType>::start() {
 }
 
 template <typename SocketType>
-void Client<SocketType>::stop(const ClientStopCode code) {
+void Client<SocketType>::stop(const StopCode code) {
     if (!_is_running.exchange(false)) return;
 
-    if (code != ClientStopCode::Normal) {
-        spdlog::debug("{} stopped abnormally with code {}", display(), std::to_underlying(code));
-    }
-
-    _connection.close(ConnectionCloseCode::Normal);
+    _connection.close(Connection<SocketType>::CloseCode::Normal);
     _heartbeat.stop();
 
-    _on_stop(this->shared_from_this());
+    _stopped(this->shared_from_this(), code);
 }
 
 template <typename SocketType>
@@ -145,16 +137,16 @@ void Client<SocketType>::send(std::shared_ptr<OutMessage> message) {
 }
 
 template <typename SocketType>
-void Client<SocketType>::authenticate(const u32 account_id, const u32 character_id) {
+void Client<SocketType>::authenticate() {
     _is_authenticated = true;
-
-    _account_id = account_id;
-    _character_id = character_id;
 }
 
 template <typename SocketType>
-std::string Client<SocketType>::display() const {
-    return std::format("Client {{ account_id: {}, character_id: {} }}"sv,
-        _account_id, _character_id);
+typename Client<SocketType>::Signals Client<SocketType>::bind(
+    MessageQueue<Client>* message_queue,
+    std::function<void(std::shared_ptr<Client>, StopCode)>&& on_stopped) {
+    _message_queue = message_queue;
+
+    return Signals {_stopped.connect(std::move(on_stopped))};
 }
 }

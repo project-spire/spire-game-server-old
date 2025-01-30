@@ -2,6 +2,8 @@
 
 #include <spire/core/types.hpp>
 
+#include <filesystem>
+
 namespace spire {
 class Settings final {
 public:
@@ -10,6 +12,10 @@ public:
     static u16 game_listen_port() { return _game_listen_port; }
     static u16 admin_listen_port() { return _admin_listen_port; }
     static u16 listen_backlog() { return _listen_backlog; }
+    static bool tcp_no_delay() { return _tcp_no_delay; }
+
+    static std::filesystem::path certificate_file() { return _certificate_file; }
+    static std::filesystem::path private_key_file() { return _private_key_file; }
 
     static std::string_view auth_jwt_key() { return _auth_jwt_key; }
 
@@ -26,6 +32,10 @@ private:
     inline static u16 _game_listen_port;
     inline static u16 _admin_listen_port;
     inline static u16 _listen_backlog;
+    inline static bool _tcp_no_delay;
+
+    inline static std::filesystem::path _certificate_file;
+    inline static std::filesystem::path _private_key_file;
 
     inline static std::string _auth_jwt_key;
 

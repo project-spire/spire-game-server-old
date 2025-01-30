@@ -25,6 +25,10 @@ void Settings::init() {
     _listen_backlog = settings["listen_backlog"]
         ? settings["listen_backlog"].as<u16>()
         : boost::asio::socket_base::max_listen_connections;
+    _tcp_no_delay = settings["tcp_no_delay"].as<bool>();
+
+    _certificate_file = std::getenv("SPIRE_GAME_CERTIFICATE_FILE");
+    _private_key_file = std::getenv("SPIRE_GAME_CERTIFICATE_FILE");
 
     _auth_jwt_key = read_file_line(std::getenv("SPIRE_AUTH_JWT_KEY_FILE"));
 
