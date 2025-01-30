@@ -8,6 +8,12 @@
 
 namespace spire::net {
 class Room : public std::enable_shared_from_this<Room>, boost::noncopyable {
+    enum class State : u8 {
+        Idle,
+        Active,
+        Terminating,
+    };
+
 public:
     Room(
         u32 id,
@@ -17,6 +23,7 @@ public:
 
     void start();
     void stop();
+    void terminate();
 
     void add_client_deferred(std::shared_ptr<Client> client);
     void remove_client_deferred(std::shared_ptr<Client> client);
@@ -28,6 +35,10 @@ public:
     u32 id() const { return _id; }
 
 private:
+    virtual void on_started() {}
+    virtual void on_stopped() {}
+    virtual void on_terminated() {}
+
     virtual void on_client_entered(const std::shared_ptr<Client>& /*client*/) {}
     virtual void on_client_left(const std::shared_ptr<Client>& /*client*/) {}
 
@@ -40,14 +51,13 @@ protected:
 
 private:
     const u32 _id;
+    std::atomic<State> _state {State::Idle};
 
-    std::atomic<bool> _is_running {false};
     boost::asio::any_io_executor& _io_executor;
     tf::Executor& _work_executor;
 
     ConcurrentQueue<std::function<void()>> _tasks {};
     ConcurrentQueue<std::unique_ptr<InMessage>> _messages {};
-
     std::unordered_map<u64, std::shared_ptr<Client>> _clients {};
 };
 }

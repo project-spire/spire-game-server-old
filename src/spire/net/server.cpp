@@ -45,10 +45,6 @@ void Server::start() {
             add_client_deferred(std::move(socket));
         }
     }, boost::asio::detached);
-
-    _waiting_room->start();
-    for (const auto& room : _rooms | std::views::values)
-        room->start();
 }
 
 void Server::stop() {

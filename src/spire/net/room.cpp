@@ -15,21 +15,36 @@ Room::~Room() {
 }
 
 void Room::start() {
-    if (_is_running.exchange(true)) return;
+    if (_state == State::Terminating) return;
+    if (_state.exchange(State::Active) == State::Active) return;
 
     post(_io_executor, [self = shared_from_this()] {
         self->update(steady_clock::now());
     });
+
+    on_started();
 }
 
 void Room::stop() {
-    if (!_is_running.exchange(false)) return;
+    if (_state == State::Terminating) return;
+    if (_state.exchange(State::Idle) == State::Idle) return;
 
-    // TODO: Cleanup <- Data race with update function
-    // Add is_updating?
+    on_stopped();
+}
+
+void Room::terminate() {
+    if (_state.exchange(State::Terminating) == State::Terminating) return;
+
+    // TODO: Cleanup <- Caution: Data race with update function
+
+    on_terminated();
 }
 
 void Room::add_client_deferred(std::shared_ptr<Client> client) {
+    if (_clients.empty()) {
+        start();
+    }
+
     _tasks.push([this, client = std::move(client)] mutable {
         _clients[client->id()] = client;
 
@@ -61,10 +76,7 @@ void Room::broadcast_message_deferred(std::shared_ptr<OutMessage> message) {
 }
 
 void Room::update(const time_point<steady_clock> last_update_time) {
-    if (!_is_running)
-        return;
-
-    tf::Taskflow taskflow {};
+    if (_state == State::Terminating) return;
 
     // TODO: IO threads are handling messages and tasks
     // -> Let work threads handle these
@@ -82,16 +94,22 @@ void Room::update(const time_point<steady_clock> last_update_time) {
         tasks.pop();
     }
 
+    if (_clients.empty() && _state == State::Active) {
+        stop();
+        return;
+    }
+
+    tf::Taskflow system_taskflow {};
     const auto now {steady_clock::now()};
     const f32 dt {duration<f32, std::milli> {now - last_update_time}.count()};
 
-    compose_systems(taskflow, now, dt);
+    compose_systems(system_taskflow, now, dt);
 
     // Run and update again
     // TODO: The shorter a room's update time, the more it updates --> Uneven updates
     // --> Use co_spawn and sleep for minimum interval rate? <-- Don't use this_thread::sleep because it will block the
     // thread, so that reduces worker in the thread pool
-    _work_executor.run(std::move(taskflow),
+    _work_executor.run(std::move(system_taskflow),
         [self = shared_from_this(), now] mutable { defer(self->_io_executor, [self, now] { self->update(now); }); });
 }
 } // namespace spire::net
