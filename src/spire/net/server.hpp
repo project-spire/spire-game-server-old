@@ -31,6 +31,7 @@ private:
 
     std::unordered_map<u64, std::shared_ptr<Client>> _clients {};
     std::shared_ptr<Room> _waiting_room;
+    std::shared_ptr<Room> _admin_room;
     std::unordered_map<u32, std::shared_ptr<Room>> _rooms {};
 };
 }

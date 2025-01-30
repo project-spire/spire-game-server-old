@@ -5,7 +5,7 @@ namespace spire::net {
 Room::Room(
     const u32 id,
     boost::asio::any_io_executor& io_executor,
-    tf::Executor& work_executor)
+    tf::Executor* work_executor)
     : _id {id},
     _io_executor {io_executor},
     _work_executor {work_executor} {}
@@ -99,17 +99,27 @@ void Room::update(const time_point<steady_clock> last_update_time) {
         return;
     }
 
-    tf::Taskflow system_taskflow {};
     const auto now {steady_clock::now()};
     const f32 dt {duration<f32, std::milli> {now - last_update_time}.count()};
 
+    if (!_work_executor) {
+        //TODO: Use other executor? How?
+        defer(_io_executor, [self = shared_from_this(), now] {
+            self->update(now);
+        });
+        return;
+    }
+
+    tf::Taskflow system_taskflow {};
     compose_systems(system_taskflow, now, dt);
 
     // Run and update again
     // TODO: The shorter a room's update time, the more it updates --> Uneven updates
     // --> Use co_spawn and sleep for minimum interval rate? <-- Don't use this_thread::sleep because it will block the
     // thread, so that reduces worker in the thread pool
-    _work_executor.run(std::move(system_taskflow),
-        [self = shared_from_this(), now] mutable { defer(self->_io_executor, [self, now] { self->update(now); }); });
+    _work_executor->run(std::move(system_taskflow),
+        [self = shared_from_this(), now] {
+            defer(self->_io_executor, [self, now] { self->update(now); });
+        });
 }
 } // namespace spire::net

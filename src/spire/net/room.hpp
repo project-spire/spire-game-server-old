@@ -18,7 +18,7 @@ public:
     Room(
         u32 id,
         boost::asio::any_io_executor& io_executor,
-        tf::Executor& work_executor);
+        tf::Executor* work_executor = nullptr);
     virtual ~Room();
 
     void start();
@@ -54,7 +54,7 @@ private:
     std::atomic<State> _state {State::Idle};
 
     boost::asio::any_io_executor& _io_executor;
-    tf::Executor& _work_executor;
+    tf::Executor* _work_executor;
 
     ConcurrentQueue<std::function<void()>> _tasks {};
     ConcurrentQueue<std::unique_ptr<InMessage>> _messages {};

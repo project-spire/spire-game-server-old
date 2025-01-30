@@ -3,8 +3,8 @@
 #include <spire/room/waiting_room.hpp>
 
 namespace spire {
-WaitingRoom::WaitingRoom(const u32 id, boost::asio::any_io_executor& io_executor, tf::Executor& system_executor) :
-    Room {id, io_executor, system_executor} {
+WaitingRoom::WaitingRoom(boost::asio::any_io_executor& io_executor)
+    : Room {0, io_executor} {
     _handler_controller.add_handler(AuthHandler::make());
 }
 
