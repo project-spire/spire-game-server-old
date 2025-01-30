@@ -42,7 +42,7 @@ void Server::start() {
 
     // Spawn game acceptor loop
     co_spawn(_io_executor, [this] -> boost::asio::awaitable<void> {
-        spdlog::info("Server listening on game port {}", Settings::game_listen_port());
+        spdlog::info("Server listening game on port {}", Settings::game_listen_port());
 
         while (_is_running) {
             auto [ec, socket] = co_await _game_acceptor.async_accept(boost::asio::as_tuple(boost::asio::use_awaitable));
@@ -64,10 +64,10 @@ void Server::start() {
 
     // Spawn admin acceptor loop
     co_spawn(_io_executor, [this] -> boost::asio::awaitable<void> {
-        spdlog::info("Server listening on admin port {}", Settings::admin_listen_port());
+        spdlog::info("Server listening admin on port {}", Settings::admin_listen_port());
 
         while (_is_running) {
-            auto [ec, socket] = co_await _game_acceptor.async_accept(boost::asio::as_tuple(boost::asio::use_awaitable));
+            auto [ec, socket] = co_await _admin_acceptor.async_accept(boost::asio::as_tuple(boost::asio::use_awaitable));
             if (ec) {
                 spdlog::warn("Error accepting admin socket");
                 continue;
@@ -76,11 +76,30 @@ void Server::start() {
             spdlog::debug("Server accepted admin socket from {}", socket.local_endpoint().address().to_string());
 
             SslSocket ssl_socket {std::move(socket), _ssl_context};
-            if (co_await ssl_socket.async_handshake(boost::asio::ssl::stream_base::server,
-                redirect_error(boost::asio::use_awaitable, ec)); ec) {
-                spdlog::warn("Error SSL handshaking");
-                continue;
-            }
+            boost::asio::steady_timer handshake_timer {_io_executor, 5s};
+            bool handshake_successful {false};
+
+            auto handshake = [&] -> boost::asio::awaitable<void> {
+                if (co_await ssl_socket.async_handshake(boost::asio::ssl::stream_base::server,
+                    redirect_error(boost::asio::use_awaitable, ec)); ec) {
+                    spdlog::warn("Error SSL handshaking");
+                } else {
+                    handshake_successful = true;
+                }
+                handshake_timer.cancel();
+            };
+
+            auto timeout = [&] -> boost::asio::awaitable<void> {
+                auto [ec2] = co_await handshake_timer.async_wait(boost::asio::as_tuple(boost::asio::use_awaitable));
+                if (handshake_successful) co_return;
+
+                spdlog::warn("SSL handshake timeout");
+                ssl_socket.lowest_layer().close(ec2);
+            };
+
+            //TODO
+            co_await (handshake() || timeout());
+            if (ec) continue;
 
             _admin_room->add_client_deferred(SslClient::make(std::move(ssl_socket)));
         }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <spdlog/spdlog.h>
 #include <spire/container/concurrent_queue.hpp>
 #include <spire/net/client.hpp>
 #include <spire/handler/handler_controller.hpp>
@@ -111,11 +112,15 @@ void Room<ClientType>::add_client_deferred(std::shared_ptr<ClientType> client) {
     }
 
     _tasks.push([this, new_client = std::move(client)] mutable {
-        if (!new_client->is_running()) return;
+        if (new_client->state() == ClientType::State::Terminating) return;
 
         _clients[new_client] = new_client->bind(
             &_messages,
-            [this](std::shared_ptr<ClientType> stopped_client, const typename ClientType::StopCode) {
+            [this](std::shared_ptr<ClientType> stopped_client, const typename ClientType::StopCode code) {
+                if (code != ClientType::StopCode::Normal) {
+                    spdlog::debug("Client(TODO) stopped abnormally with code {}", std::to_underlying(code));
+                }
+
                 remove_client_deferred(stopped_client);
             });
 

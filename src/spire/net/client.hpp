@@ -20,6 +20,12 @@ using MessageQueue = ConcurrentQueue<std::pair<std::shared_ptr<ClientType>, std:
 template <typename SocketType>
 class Client final : public std::enable_shared_from_this<Client<SocketType>>, boost::noncopyable {
 public:
+    enum class State : u8 {
+        Idle,
+        Active,
+        Terminating,
+    };
+
     enum class StopCode : u8 {
         Normal,
         InvalidInMessage,
@@ -48,11 +54,11 @@ public:
         MessageQueue<Client>* message_queue,
         std::function<void(std::shared_ptr<Client>, StopCode)>&& on_stopped);
 
+    State state() const { return _state; }
     milliseconds ping() const { return _ping; }
-    bool is_running() const { return _is_running; }
 
 private:
-    std::atomic<bool> _is_running {false};
+    std::atomic<State> _state {State::Idle};
     bool _is_authenticated {false};
 
     boost::asio::strand<boost::asio::any_io_executor> _strand;
@@ -110,7 +116,8 @@ std::shared_ptr<Client<SocketType>> Client<SocketType>::make(SocketType&& socket
 
 template <typename SocketType>
 void Client<SocketType>::start() {
-    if (_is_running.exchange(true)) return;
+    if (_state == State::Terminating) return;
+    if (_state.exchange(State::Active) == State::Active) return;
 
     _connection.open();
     _heartbeat.start();
@@ -118,7 +125,7 @@ void Client<SocketType>::start() {
 
 template <typename SocketType>
 void Client<SocketType>::stop(const StopCode code) {
-    if (!_is_running.exchange(false)) return;
+    if (_state.exchange(State::Terminating) == State::Terminating) return;
 
     _connection.close(Connection<SocketType>::CloseCode::Normal);
     _heartbeat.stop();

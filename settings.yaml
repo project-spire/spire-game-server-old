@@ -1,5 +1,5 @@
 listen_backlog: 4096
-tcp_no_delay: 1
+tcp_no_delay: yes
 
 heartbeat_interval: 5000 # in milliseconds
 heartbeat_retries: 3
