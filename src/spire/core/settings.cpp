@@ -20,7 +20,8 @@ std::string read_file_line(std::string_view path) {
 void Settings::init() {
     YAML::Node settings {YAML::LoadFile(SPIRE_SETTINGS_FILE)};
 
-    _listen_port = std::stoi(std::getenv("SPIRE_GAME_LISTEN_PORT"));
+    _game_listen_port = std::stoi(std::getenv("SPIRE_GAME_LISTEN_PORT"));
+    _admin_listen_port = std::stoi(std::getenv("SPIRE_ADMIN_LISTEN_PORT"));
     _listen_backlog = settings["listen_backlog"]
         ? settings["listen_backlog"].as<u16>()
         : boost::asio::socket_base::max_listen_connections;

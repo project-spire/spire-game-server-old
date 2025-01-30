@@ -9,5 +9,6 @@ enum class HandlerResult {
     Error
 };
 
-using HandlerFunction = std::function<HandlerResult(const std::shared_ptr<net::Client>&, const msg::BaseMessage&)>;
+template <typename ClientType>
+using HandlerFunction = std::function<HandlerResult(const std::shared_ptr<ClientType>&, const msg::BaseMessage&)>;
 }

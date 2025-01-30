@@ -24,8 +24,8 @@ MessageHeader MessageHeader::deserialize(const std::span<const std::byte, SIZE> 
     return MessageHeader {.body_size = body_size};
 }
 
-InMessage::InMessage(std::shared_ptr<Client> client, std::vector<std::byte>&& data)
-    : _client {std::move(client)}, _data {std::move(data)} {}
+InMessage::InMessage(std::vector<std::byte>&& data)
+    : _data {std::move(data)} {}
 
 OutMessage::OutMessage(const MessageHeader header) {
     _data.resize(sizeof(MessageHeader) + header.body_size);

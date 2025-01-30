@@ -7,8 +7,6 @@
 #include <vector>
 
 namespace spire::net {
-class Client;
-
 struct MessageHeader {
     const u16 body_size;
 
@@ -19,19 +17,17 @@ struct MessageHeader {
 };
 
 struct InMessage {
-    InMessage(std::shared_ptr<Client> client, std::vector<std::byte>&& data);
+    explicit InMessage(std::vector<std::byte>&& data);
     ~InMessage() = default;
     InMessage(const InMessage&) = delete;
     InMessage& operator=(const InMessage&) = delete;
 
-    const std::shared_ptr<Client>& client() const { return _client; }
     std::span<const std::byte> span() const { return std::span {_data.data(), _data.size()}; }
     const std::byte* data() const { return _data.data(); }
     std::byte* data() { return _data.data(); }
     size_t size() const { return _data.size(); }
 
 private:
-    std::shared_ptr<Client> _client;
     std::vector<std::byte> _data;
 };
 

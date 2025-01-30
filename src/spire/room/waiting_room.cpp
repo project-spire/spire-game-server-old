@@ -8,7 +8,7 @@ WaitingRoom::WaitingRoom(boost::asio::any_io_executor& io_executor)
     _handler_controller.add_handler(AuthHandler::make());
 }
 
-void WaitingRoom::on_client_entered(const std::shared_ptr<net::Client>& client) {
+void WaitingRoom::on_client_entered(const std::shared_ptr<net::TcpClient>& client) {
     client->start();
 
     msg::BaseMessage base {};

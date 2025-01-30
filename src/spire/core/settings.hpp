@@ -7,7 +7,8 @@ class Settings final {
 public:
     static void init();
 
-    static u16 listen_port() { return _listen_port; }
+    static u16 game_listen_port() { return _game_listen_port; }
+    static u16 admin_listen_port() { return _admin_listen_port; }
     static u16 listen_backlog() { return _listen_backlog; }
 
     static std::string_view auth_jwt_key() { return _auth_jwt_key; }
@@ -22,7 +23,8 @@ public:
     static u8 heartbeat_retries() { return _heartbeat_retries; }
 
 private:
-    inline static u16 _listen_port;
+    inline static u16 _game_listen_port;
+    inline static u16 _admin_listen_port;
     inline static u16 _listen_backlog;
 
     inline static std::string _auth_jwt_key;
