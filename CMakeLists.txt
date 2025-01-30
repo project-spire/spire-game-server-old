@@ -17,7 +17,7 @@ add_library(spire::base_lib ALIAS base_lib)
 
 target_compile_features(base_lib PUBLIC cxx_std_23)
 target_compile_options(base_lib PUBLIC -Wall -Wextra -Wpedantic)
-target_include_directories(base_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/gen)
+target_include_directories(base_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/gen)
 add_subdirectory(src/spire/component)
 add_subdirectory(src/spire/container)
 add_subdirectory(src/spire/core)
@@ -117,7 +117,7 @@ target_compile_definitions(base_lib PUBLIC BOOST_MYSQL_SEPARATE_COMPILATION) # E
 
 # Protobuf compilations
 # ----------------------------------------------------------------
-set(SPIRE_LIB_MESSAGE_GEN_DIR ${CMAKE_CURRENT_BINARY_DIR}/gen/spire/msg)
+set(SPIRE_LIB_MESSAGE_GEN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/gen/spire/msg)
 set(SPIRE_LIB_MESSAGE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/protocol/msg)
 file(MAKE_DIRECTORY ${SPIRE_LIB_MESSAGE_GEN_DIR})
 file(GLOB_RECURSE messages protocol/msg/*.proto)
