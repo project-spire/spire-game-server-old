@@ -1,4 +1,5 @@
 #include <spdlog/spdlog.h>
+#include <boost/asio/experimental/awaitable_operators.hpp>
 #include <spire/core/settings.hpp>
 #include <spire/net/server.hpp>
 #include <spire/room/admin_room.hpp>
@@ -64,6 +65,8 @@ void Server::start() {
 
     // Spawn admin acceptor loop
     co_spawn(_io_executor, [this] -> boost::asio::awaitable<void> {
+        using namespace boost::asio::experimental::awaitable_operators;
+
         spdlog::info("Server listening admin on port {}", Settings::admin_listen_port());
 
         while (_is_running) {
@@ -80,26 +83,31 @@ void Server::start() {
             bool handshake_successful {false};
 
             auto handshake = [&] -> boost::asio::awaitable<void> {
-                if (co_await ssl_socket.async_handshake(boost::asio::ssl::stream_base::server,
-                    redirect_error(boost::asio::use_awaitable, ec)); ec) {
-                    spdlog::warn("Error SSL handshaking");
-                } else {
+                const auto [handshake_ec] = co_await ssl_socket.async_handshake(
+                    boost::asio::ssl::stream_base::server, boost::asio::as_tuple(boost::asio::use_awaitable));
+
+                if (handshake_ec) {
+                    if (handshake_ec != boost::system::errc::operation_canceled) {
+                        spdlog::warn("Error SSL handshaking");
+                    }
+                }
+                else {
                     handshake_successful = true;
                 }
                 handshake_timer.cancel();
             };
 
             auto timeout = [&] -> boost::asio::awaitable<void> {
-                auto [ec2] = co_await handshake_timer.async_wait(boost::asio::as_tuple(boost::asio::use_awaitable));
-                if (handshake_successful) co_return;
+                auto [timeout_ec] = co_await handshake_timer.async_wait(boost::asio::as_tuple(boost::asio::use_awaitable));
+                if (handshake_successful || timeout_ec == boost::system::errc::operation_canceled) co_return;
 
                 spdlog::warn("SSL handshake timeout");
-                ssl_socket.lowest_layer().close(ec2);
+
+                ssl_socket.lowest_layer().close(timeout_ec);
             };
 
-            //TODO
             co_await (handshake() || timeout());
-            if (ec) continue;
+            if (!handshake_successful) continue;
 
             _admin_room->add_client_deferred(SslClient::make(std::move(ssl_socket)));
         }
