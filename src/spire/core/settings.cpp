@@ -30,7 +30,7 @@ void Settings::init() {
     _certificate_file = std::getenv("SPIRE_GAME_CERTIFICATE_FILE");
     _private_key_file = std::getenv("SPIRE_GAME_PRIVATE_KEY_FILE");
 
-    _auth_jwt_key = read_file_line(std::getenv("SPIRE_AUTH_JWT_KEY_FILE"));
+    _auth_key = read_file_line(std::getenv("SPIRE_AUTH_KEY_FILE"));
 
     _db_host = std::getenv("SPIRE_DB_HOST");
     _db_port = std::stoi(std::getenv("SPIRE_DB_PORT"));

@@ -17,7 +17,7 @@ public:
     static std::filesystem::path certificate_file() { return _certificate_file; }
     static std::filesystem::path private_key_file() { return _private_key_file; }
 
-    static std::string_view auth_jwt_key() { return _auth_jwt_key; }
+    static std::string_view auth_key() { return _auth_key; }
 
     static std::string_view db_host() { return _db_host; }
     static uint16_t db_port() { return _db_port; }
@@ -37,7 +37,7 @@ private:
     inline static std::filesystem::path _certificate_file;
     inline static std::filesystem::path _private_key_file;
 
-    inline static std::string _auth_jwt_key;
+    inline static std::string _auth_key;
 
     inline static std::string _db_host;
     inline static uint16_t _db_port;

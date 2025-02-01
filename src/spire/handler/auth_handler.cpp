@@ -23,7 +23,7 @@ HandlerResult AuthHandler::handle_login(const std::shared_ptr<net::TcpClient>& c
     try {
         const auto decoded_token {jwt::decode(login.token())};
         const auto verifier {jwt::verify()
-            .allow_algorithm(jwt::algorithm::hs256 {Settings::auth_jwt_key().data()})
+            .allow_algorithm(jwt::algorithm::hs256 {Settings::auth_key().data()})
             .with_claim("account_id", jwt::claim {std::to_string(login.account_id())})
             .with_claim("character_id", jwt::claim {std::to_string(login.character_id())})};
 
