@@ -10,15 +10,14 @@ Heartbeat::Heartbeat(
     _on_retry {std::move(on_retry)},
     _on_dead {std::move(on_dead)} {
     _timer.add_timeout_callback([this] {
-        if (_retries >= Settings::heartbeat_retries()) {
+        if (steady_clock::now() <= _last_retry + Settings::heartbeat_interval()) return;
+
+        if (++_retries >= Settings::heartbeat_retries()) {
             stop();
             _on_dead();
             return;
         }
 
-        if (steady_clock::now() <= _last_retry + Settings::heartbeat_interval()) return;
-
-        ++_retries;
         _on_retry();
     });
 }

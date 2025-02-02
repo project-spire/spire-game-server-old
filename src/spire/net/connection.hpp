@@ -93,26 +93,26 @@ template <typename SocketType>
 void Connection<SocketType>::send(std::unique_ptr<OutMessage> message) {
     if (!message || message->empty()) return;
 
-    dispatch(_strand, [this, message = std::move(message)] -> boost::asio::awaitable<void> {
+    co_spawn(_strand, [this, message = std::move(message)] -> boost::asio::awaitable<void> {
         if (!_is_open) co_return;
 
         const auto [ec, _] = co_await async_write(
             _socket, message->span(), boost::asio::as_tuple(boost::asio::use_awaitable));
         if (ec) close(CloseCode::SendError);
-    });
+    }, boost::asio::detached);
 }
 
 template <typename SocketType>
 void Connection<SocketType>::send(std::shared_ptr<OutMessage> message) {
     if (!message || message->empty()) return;
 
-    dispatch(_strand, [this, message = std::move(message)] -> boost::asio::awaitable<void> {
+    co_spawn(_strand, [this, message = std::move(message)] -> boost::asio::awaitable<void> {
         if (!_is_open) co_return;
 
         const auto [ec, _] = co_await async_write(
             _socket, message->span(), boost::asio::as_tuple(boost::asio::use_awaitable));
         if (ec) close(CloseCode::SendError);
-    });
+    }, boost::asio::detached);
 }
 
 template <typename SocketType>
