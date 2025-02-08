@@ -1,9 +1,9 @@
 #pragma once
 
-#include <spire/net/room.hpp>
+#include <spire/server/room.hpp>
 
 namespace spire {
-class AdminRoom final : public net::SslRoom {
+class AdminRoom final : public SslRoom {
 public:
     explicit AdminRoom(boost::asio::any_io_executor& io_executor);
     ~AdminRoom() override = default;

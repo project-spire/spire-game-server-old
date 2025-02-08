@@ -1,4 +1,4 @@
-target_sources(base_lib PUBLIC
+target_sources(core PUBLIC
     random.hpp
     settings.cpp
     settings.hpp

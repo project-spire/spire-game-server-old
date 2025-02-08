@@ -1,9 +1,9 @@
 #pragma once
 
-#include <spire/net/room.hpp>
+#include <spire/server/room.hpp>
 
 namespace spire {
-class WaitingRoom final : public net::TcpRoom {
+class WaitingRoom final : public TcpRoom {
 public:
     explicit WaitingRoom(boost::asio::any_io_executor& io_executor);
     ~WaitingRoom() override = default;

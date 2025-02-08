@@ -1,3 +1,3 @@
-target_sources(base_lib PUBLIC
+target_sources(server PUBLIC
     physics_system.hpp
 )

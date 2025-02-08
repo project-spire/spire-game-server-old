@@ -1,11 +1,11 @@
 #include <spdlog/spdlog.h>
 #include <boost/asio/experimental/awaitable_operators.hpp>
 #include <spire/core/settings.hpp>
-#include <spire/net/server.hpp>
+#include <spire/server/server.hpp>
 #include <spire/room/admin_room.hpp>
 #include <spire/room/waiting_room.hpp>
 
-namespace spire::net {
+namespace spire {
 Server::Server(boost::asio::any_io_executor&& io_executor)
     : _io_executor {std::move(io_executor)},
     _io_strand {make_strand(_io_executor)},
@@ -59,7 +59,7 @@ void Server::start() {
                 continue;
             }
 
-            _waiting_room->add_client_deferred(TcpClient::make(std::move(socket)));
+            _waiting_room->add_client_deferred(net::TcpClient::make(std::move(socket)));
         }
     }, boost::asio::detached);
 
@@ -78,7 +78,7 @@ void Server::start() {
 
             spdlog::debug("Server accepted admin socket from {}", socket.local_endpoint().address().to_string());
 
-            SslSocket ssl_socket {std::move(socket), _ssl_context};
+            net::SslSocket ssl_socket {std::move(socket), _ssl_context};
             boost::asio::steady_timer handshake_timer {_io_executor, 5s};
             bool handshake_successful {false};
 
@@ -109,7 +109,7 @@ void Server::start() {
             co_await (handshake() || timeout());
             if (!handshake_successful) continue;
 
-            _admin_room->add_client_deferred(SslClient::make(std::move(ssl_socket)));
+            _admin_room->add_client_deferred(net::SslClient::make(std::move(ssl_socket)));
         }
     }, boost::asio::detached);
 }

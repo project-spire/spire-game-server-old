@@ -1,4 +1,4 @@
-target_sources(base_lib PUBLIC
+target_sources(server PUBLIC
     auth_handler.cpp
     auth_handler.hpp
     handler_controller.hpp

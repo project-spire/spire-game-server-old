@@ -7,12 +7,12 @@
 
 #include <ranges>
 
-namespace spire::net {
+namespace spire {
 template <typename ClientType>
 class Room;
 
-using TcpRoom = Room<TcpClient>;
-using SslRoom = Room<SslClient>;
+using TcpRoom = Room<net::TcpClient>;
+using SslRoom = Room<net::SslClient>;
 
 
 template <typename ClientType>
@@ -35,7 +35,7 @@ public:
     void remove_client_deferred(std::shared_ptr<ClientType> client);
 
     void post_task(std::function<void()>&& task);
-    void broadcast_message_deferred(std::shared_ptr<OutMessage> message);
+    void broadcast_message_deferred(std::shared_ptr<net::OutMessage> message);
 
     u32 id() const { return _id; }
 
@@ -61,7 +61,7 @@ private:
 
     std::unordered_map<std::shared_ptr<ClientType>, typename ClientType::Signals> _clients {};
     ConcurrentQueue<std::function<void()>> _tasks {};
-    MessageQueue<ClientType> _messages {};
+    net::MessageQueue<ClientType> _messages {};
 };
 
 
@@ -145,7 +145,7 @@ void Room<ClientType>::post_task(std::function<void()>&& task) {
 }
 
 template <typename ClientType>
-void Room<ClientType>::broadcast_message_deferred(std::shared_ptr<OutMessage> message) {
+void Room<ClientType>::broadcast_message_deferred(std::shared_ptr<net::OutMessage> message) {
     _tasks.push([self = this->shared_from_this(), message = std::move(message)] {
         for (const auto& client : self->_clients | std::views::keys)
             client->send(message);
@@ -158,7 +158,7 @@ void Room<ClientType>::update(const time_point<steady_clock> last_update_time) {
 
     // TODO: IO threads are handling messages and tasks
     // -> Let work threads handle these
-    std::queue<std::pair<std::shared_ptr<ClientType>, std::unique_ptr<InMessage>>> messages;
+    std::queue<std::pair<std::shared_ptr<ClientType>, std::unique_ptr<net::InMessage>>> messages;
     _messages.swap(messages);
     while (!messages.empty()) {
         auto [client, message] = std::move(messages.front());

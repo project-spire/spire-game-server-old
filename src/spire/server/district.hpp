@@ -1,8 +1,8 @@
 #pragma once
 
-#include <spire/net/room.hpp>
+#include <spire/server/room.hpp>
 
-namespace spire::net {
+namespace spire {
 template <typename RoomType>
 class District;
 
@@ -13,7 +13,7 @@ using SslDistrict = District<SslRoom>;
 template <typename RoomType>
 class District {
 public:
-    void broadcast_message(std::shared_ptr<OutMessage> message);
+    void broadcast_message(std::shared_ptr<net::OutMessage> message);
 
 private:
     std::unordered_map<u32, std::shared_ptr<RoomType>> _rooms {};
@@ -21,7 +21,7 @@ private:
 
 
 template <typename RoomType>
-void District<RoomType>::broadcast_message(std::shared_ptr<OutMessage> message) {
+void District<RoomType>::broadcast_message(std::shared_ptr<net::OutMessage> message) {
     for (const auto& room : _rooms | std::views::values)
         room->broadcast_message_deferred(message);
 }

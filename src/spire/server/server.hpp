@@ -1,10 +1,9 @@
 #pragma once
 
-#include <spire/net/client.hpp>
-#include <spire/net/district.hpp>
+#include <spire/server/district.hpp>
 #include <taskflow/taskflow.hpp>
 
-namespace spire::net {
+namespace spire {
 class Server final : boost::noncopyable {
 public:
     explicit Server(boost::asio::any_io_executor&& io_executor);

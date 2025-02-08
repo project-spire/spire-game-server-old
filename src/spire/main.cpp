@@ -3,7 +3,7 @@
 #include <boost/mysql.hpp>
 #include <spdlog/spdlog.h>
 #include <spire/core/settings.hpp>
-#include <spire/net/server.hpp>
+#include <spire/server/server.hpp>
 
 int main() {
     using namespace spire;
@@ -17,7 +17,7 @@ int main() {
 
     boost::asio::thread_pool io_threads {std::thread::hardware_concurrency() - 1};
     boost::asio::signal_set signals {io_threads.get_executor(), SIGINT, SIGTERM};
-    net::Server server {io_threads.get_executor()};
+    Server server {io_threads.get_executor()};
 
     boost::mysql::pool_params db_params {};
     db_params.server_address.emplace_host_and_port(Settings::db_host().data(), Settings::db_port());

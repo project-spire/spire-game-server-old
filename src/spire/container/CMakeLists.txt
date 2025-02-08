@@ -1,3 +1,3 @@
-target_sources(base_lib PUBLIC
+target_sources(core PUBLIC
     concurrent_queue.hpp
 )
