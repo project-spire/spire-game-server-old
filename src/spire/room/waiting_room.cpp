@@ -12,10 +12,5 @@ WaitingRoom::WaitingRoom(boost::asio::any_io_executor& io_executor)
 
 void WaitingRoom::on_client_entered(const std::shared_ptr<net::TcpClient>& client) {
     client->start();
-
-    msg::BaseMessage base {};
-    base.set_allocated_login_available(new msg::LoginAvailable);
-
-    client->send(std::make_unique<net::OutMessage>(base));
 }
 }
