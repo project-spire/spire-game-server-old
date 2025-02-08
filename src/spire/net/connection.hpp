@@ -98,7 +98,7 @@ void Connection<SocketType>::send(std::unique_ptr<OutMessage> message) {
 
         const auto [ec, _] = co_await async_write(
             _socket, message->span(), boost::asio::as_tuple(boost::asio::use_awaitable));
-        if (ec) close(CloseCode::SendError);
+        if (ec) close(ec == boost::asio::error::eof ? CloseCode::Normal : CloseCode::SendError);
     }, boost::asio::detached);
 }
 
@@ -111,7 +111,7 @@ void Connection<SocketType>::send(std::shared_ptr<OutMessage> message) {
 
         const auto [ec, _] = co_await async_write(
             _socket, message->span(), boost::asio::as_tuple(boost::asio::use_awaitable));
-        if (ec) close(CloseCode::SendError);
+        if (ec) close(ec == boost::asio::error::eof ? CloseCode::Normal : CloseCode::SendError);
     }, boost::asio::detached);
 }
 
@@ -122,7 +122,7 @@ boost::asio::awaitable<void> Connection<SocketType>::receive() {
         _socket,
         boost::asio::buffer(header_buffer),
         boost::asio::as_tuple(boost::asio::use_awaitable)); ec) {
-        close(CloseCode::ReceiveError);
+        close(ec == boost::asio::error::eof ? CloseCode::Normal : CloseCode::ReceiveError);
         co_return;
     }
 
@@ -137,7 +137,7 @@ boost::asio::awaitable<void> Connection<SocketType>::receive() {
         _socket,
         boost::asio::buffer(body_buffer),
         boost::asio::as_tuple(boost::asio::use_awaitable)); ec) {
-        close(CloseCode::ReceiveError);
+        close(ec == boost::asio::error::eof ? CloseCode::Normal : CloseCode::ReceiveError);
         co_return;
     }
 
