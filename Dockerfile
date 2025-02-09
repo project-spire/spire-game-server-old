@@ -23,4 +23,6 @@ WORKDIR /app
 COPY . .
 
 RUN cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSPIRE_BUILD_TESTS=OFF && \
-    cmake --build build --config Release --target game_server
+    cmake --build build --config Release --target server ping
+
+ENTRYPOINT ["./build/server"]
