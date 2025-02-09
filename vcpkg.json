@@ -1,0 +1,15 @@
+{
+  "name": "spire-game-server",
+  "version": "1.0.0",
+  "dependencies": [
+    "boost-asio",
+    "entt",
+    "glm",
+    "jwt-cpp",
+    "mongo-cxx-driver",
+    "protobuf",
+    "spdlog",
+    "taskflow",
+    "yaml-cpp"
+  ]
+}

@@ -1,11 +1,6 @@
 cmake_minimum_required(VERSION 3.28)
 
-project(
-    spire_game_server
-    DESCRIPTION "A game server of Project Spire"
-    VERSION 25.02.08
-    LANGUAGES CXX
-)
+project(spire-game-server LANGUAGES CXX)
 
 option(SPIRE_BUILD_TESTS "Enable builds of tests" ON)
 
@@ -14,63 +9,15 @@ option(SPIRE_BUILD_TESTS "Enable builds of tests" ON)
 # ----------------------------------------------------------------
 include(FetchContent)
 
-find_package(Boost 1.87.0 REQUIRED COMPONENTS system charconv)
-
-FetchContent_Declare(
-    EnTT
-    GIT_REPOSITORY https://github.com/skypjack/entt.git
-    GIT_TAG v3.14.0
-)
-FetchContent_MakeAvailable(EnTT)
-
-FetchContent_Declare(
-    glm
-    GIT_REPOSITORY https://github.com/g-truc/glm.git
-    GIT_TAG 1.0.1
-)
-FetchContent_MakeAvailable(glm)
-
-FetchContent_Declare(jwt-cpp
-    GIT_REPOSITORY https://github.com/Thalhammer/jwt-cpp.git
-    GIT_TAG v0.7.0
-)
-FetchContent_MakeAvailable(jwt-cpp)
-set(JWT_BUILD_EXAMPLES OFF CACHE BOOL "Disable the build of jwt-cpp examples" FORCE)
-
-find_package(OpenSSL REQUIRED)
-
-FetchContent_Declare(
-    protobuf
-    GIT_REPOSITORY https://github.com/protocolbuffers/protobuf.git
-    GIT_TAG v29.3
-)
-FetchContent_MakeAvailable(protobuf)
-option(protobuf_INSTALL "Install protobuf binaries and files" OFF)
-option(protobuf_BUILD_TESTS "Build tests" OFF)
-set(protobuf_VERBOSE OFF)
-
-FetchContent_Declare(
-    spdlog
-    GIT_REPOSITORY https://github.com/gabime/spdlog.git
-    GIT_TAG v1.15.0
-)
-FetchContent_MakeAvailable(spdlog)
-
-FetchContent_Declare(
-    Taskflow
-    GIT_REPOSITORY https://github.com/taskflow/taskflow.git
-    GIT_TAG v3.9.0
-)
-FetchContent_MakeAvailable(Taskflow)
-option(TF_BUILD_TESTS "Enables builds of tests" OFF)
-option(TF_BUILD_EXAMPLES "Enables builds of examples" OFF)
-
-FetchContent_Declare(
-    yaml-cpp
-    GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-    GIT_TAG 0.8.0
-)
-FetchContent_MakeAvailable(yaml-cpp)
+find_package(Boost REQUIRED COMPONENTS system)
+find_package(entt REQUIRED)
+find_package(glm REQUIRED)
+find_package(jwt-cpp REQUIRED)
+find_package(mongo-cxx-driver REQUIRED)
+find_package(protobuf REQUIRED)
+find_package(spdlog REQUIRED)
+find_package(taskflow REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 
 # Source
@@ -92,7 +39,6 @@ add_subdirectory(src/spire/net)
 
 target_link_libraries(core
     PUBLIC
-    Boost::charconv
     Boost::system
     OpenSSL::Crypto
     OpenSSL::SSL
@@ -121,7 +67,6 @@ target_link_libraries(server
     jwt-cpp::jwt-cpp
     Taskflow
 )
-target_compile_definitions(server PUBLIC BOOST_MYSQL_SEPARATE_COMPILATION) # Enable Boost::mysql separate compilation
 
 
 # Protobuf compilations
