@@ -1,4 +1,5 @@
 #include <jwt-cpp/jwt.h>
+#include <spdlog/spdlog.h>
 #include <spire/core/settings.hpp>
 #include <spire/handler/auth_handler.hpp>
 
@@ -29,17 +30,17 @@ HandlerResult AuthHandler::handle_login(const std::shared_ptr<net::TcpClient>& c
 
         verifier.verify(decoded_token);
     } catch (const std::exception&) {
-        //TODO: Log error
+        spdlog::warn("Client(TODO): Invalid token");
         client->stop(net::TcpClient::StopCode::AuthenticationError);
         return HandlerResult::Error;
     }
 
+    spdlog::debug("Client(TODO): Authenticated");
+    client->authenticate();
 
-
-    //TODO: Async read from DB and callback
+    //TODO: Async read player from DB and callback
     {
         // const u64 account_id {}, character_id {};
-        client->authenticate();
     }
 
     return HandlerResult::Break;

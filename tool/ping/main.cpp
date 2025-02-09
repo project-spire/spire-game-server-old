@@ -1,5 +1,4 @@
-#include <spire/core/types.hpp>
-#include <spire/net/client.hpp>
+#include <spire/net/connection.hpp>
 
 using namespace spire;
 
