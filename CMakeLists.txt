@@ -7,17 +7,16 @@ option(SPIRE_BUILD_TESTS "Enable builds of tests" ON)
 
 # External Dependencies
 # ----------------------------------------------------------------
-include(FetchContent)
-
 find_package(Boost REQUIRED COMPONENTS system)
-find_package(entt REQUIRED)
-find_package(glm REQUIRED)
-find_package(jwt-cpp REQUIRED)
-find_package(mongo-cxx-driver REQUIRED)
-find_package(protobuf REQUIRED)
-find_package(spdlog REQUIRED)
-find_package(taskflow REQUIRED)
-find_package(yaml-cpp REQUIRED)
+find_package(EnTT CONFIG REQUIRED)
+find_package(glm CONFIG REQUIRED)
+find_package(jwt-cpp CONFIG REQUIRED)
+find_package(mongocxx CONFIG REQUIRED)
+find_package(OpenSSL CONFIG REQUIRED)
+find_package(protobuf CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
+find_package(Taskflow CONFIG REQUIRED)
+find_package(yaml-cpp CONFIG REQUIRED)
 
 
 # Source
@@ -63,14 +62,17 @@ target_link_libraries(server
     spire::core
 
     EnTT::EnTT
-    glm
+    glm::glm
     jwt-cpp::jwt-cpp
-    Taskflow
+    mongo::mongocxx_static
+    Taskflow::Taskflow
 )
 
 
 # Protobuf compilations
 # ----------------------------------------------------------------
+find_program(PROTOC_EXECUTABLE NAMES protoc REQUIRED)
+
 set(SPIRE_MESSAGE_GEN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/gen/spire/msg)
 set(SPIRE_MESSAGE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/protocol/msg)
 file(MAKE_DIRECTORY ${SPIRE_MESSAGE_GEN_DIR})
@@ -88,12 +90,11 @@ function(compile_protobuf_message in_file)
 
     add_custom_command(
         OUTPUT "${out_src}" "${out_hdr}"
-        COMMAND protoc
+        COMMAND ${PROTOC_EXECUTABLE}
         ARGS
             --cpp_out=${SPIRE_MESSAGE_GEN_DIR}
             -I${SPIRE_MESSAGE_INCLUDE_DIR}
             ${in_file}
-        DEPENDS ${in_file} protoc
         COMMENT "[protoc] Compiling message: ${out_src} ${out_hdr}"
     )
 

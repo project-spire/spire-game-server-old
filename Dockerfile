@@ -10,6 +10,14 @@ RUN apt-get update -y && \
     libssl-dev \
     pkg-config
 
+# Install boost (manually because installation via vcpkg is slow)
+WORKDIR /root
+RUN wget https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz && \
+    tar -xf boost_1_87_0.tar.gz
+WORKDIR /root/boost_1_87_0
+RUN ./bootstrap.sh --with-libraries=system && \
+    ./b2 install
+
 # Install vcpkg
 WORKDIR /root
 RUN git clone https://github.com/microsoft/vcpkg.git && \
@@ -17,17 +25,14 @@ RUN git clone https://github.com/microsoft/vcpkg.git && \
 ENV VCPKG_ROOT /root/vcpkg
 ENV PATH /root/vcpkg:$PATH
 
-# Setup
-WORKDIR /app
-COPY . .
-
-RUN vcpkg install
-
 
 FROM base AS build
 
-# Build
-RUN cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSPIRE_BUILD_TESTS=OFF && \
-    cmake --build build --config Release --target server ping
+WORKDIR /app
+COPY . .
+
+RUN vcpkg install --clean-after-build
+RUN cmake --preset release && \
+    cmake --build build --target server ping
 
 ENTRYPOINT ["./build/server"]

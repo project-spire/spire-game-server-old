@@ -3,5 +3,5 @@
 .vs
 
 build
-cmake-build-*
 gen
+vcpkg_installed
